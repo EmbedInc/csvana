@@ -25,4 +25,8 @@ begin
   writeln ('CSV file "', root_p^.tnam.str:root_p^.tnam.len, '":');
   writeln ('  ', root_p^.nvals, ' dependent values');
   writeln ('  ', root_p^.nrec, ' data records');
+  if root_p^.rec_last_p <> nil then begin
+    string_f_fp_fixed (fnam, root_p^.rec_last_p^.time, 3);
+    writeln ('  ', fnam.str:fnam.len, ' seconds of data');
+    end;
   end.
