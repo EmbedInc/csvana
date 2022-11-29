@@ -29,4 +29,14 @@ begin
     string_f_fp_fixed (fnam, root_p^.rec_last_p^.time, 3);
     writeln ('  ', fnam.str:fnam.len, ' seconds of data');
     end;
+
+  if
+      (root_p^.nrec >= 2) and          {at least two records ?}
+      (root_p^.rec_last_p^.time > root_p^.rec_p^.time) {there is a time difference ?}
+      then begin
+    csvana_draw (                      {show the data graphically}
+      root_p^,                         {the data to show}
+      root_p^.rec_p^.time,             {starting time to show}
+      root_p^.rec_last_p^.time);       {ending time to show}
+    end;
   end.

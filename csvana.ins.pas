@@ -39,6 +39,11 @@ type
     rec_last_p: csvana_rec_p_t;        {to last record in list}
     end;
 
+procedure csvana_draw (                {draw section of CSV data}
+  in      csv: csvana_root_t;          {CSV data to draw}
+  in      t1, t2: double);             {initial time interval to show}
+  val_param; extern;
+
 procedure csvana_field_new (           {add new field per record to CSV data}
   in out  root: csvana_root_t;         {CSV data to add field to}
   in      name: univ string_var_arg_t); {name of the new field}
