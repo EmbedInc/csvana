@@ -7,6 +7,11 @@ define csvana_draw;
 %include 'img.ins.pas';
 %include 'rend.ins.pas';
 
+const
+  text_minfrx = 1.0 / 90.0;            {min text size, fraction of X dimension}
+  text_minfry = 1.0 / 65.0;            {min text size, fraction of Y dimension}
+  text_minpix = 13;                    {min text size, pixels}
+
 var
   rendev: rend_dev_id_t;               {RENDlib ID for our drawing device}
   bitmap: rend_bitmap_handle_t;        {handle to our pixels bitmap}
@@ -17,6 +22,38 @@ var
   cliph: rend_clip_2dim_handle_t;      {clip rectangle handle}
   devdx, devdy: sys_int_machine_t;     {drawing device size, pixels}
   devasp: real;                        {drawing device aspect ratio}
+  devw, devh: real;                    {drawing device size, 2D space}
+{
+********************************************************************************
+*
+*   Local subroutine CSVANA_REDRAW
+*
+*   Redraw the whole display with the current parameters.
+}
+procedure csvana_redraw;
+  val_param; internal;
+
+begin
+  rend_set.enter_rend^;
+
+  rend_set.rgb^ (0.0, 0.0, 0.0);
+  rend_prim.clear_cwind^;
+
+  rend_set.rgb^ (0.7, 0.7, 0.7);
+  rend_set.cpnt_2d^ (devw, devh/2);
+  rend_prim.vect_2d^ (devw/2, devh);
+  rend_prim.vect_2d^ (0.0, devh/2);
+  rend_prim.vect_2d^ (devw/2, 0.0);
+  rend_prim.vect_2d^ (devw, devh/2);
+
+  rend_set.rgb^ (1.0, 1.0, 1.0);
+  rend_set.cpnt_2d^ (devw/2, devh/2);
+  tparm.start_org := rend_torg_mid_k;
+  rend_set.text_parms^ (tparm);
+  rend_prim.text^ ('Hello, world!', 13);
+
+  rend_set.exit_rend^;
+  end;
 {
 ********************************************************************************
 *
@@ -31,7 +68,10 @@ procedure csvana_draw (                {draw section of CSV data}
   val_param;
 
 var
+  xb, yb, ofs: vect_2d_t;              {2D transform}
   ev: rend_event_t;                    {last RENDlib event received}
+  ii: sys_int_machine_t;               {scratch integer}
+  r: real;                             {scratch floating point}
   stat: sys_err_t;                     {completion status}
 
 label
@@ -67,8 +107,22 @@ begin
   rend_set.event_req_wiped_rect^ (true);
 
   rend_get.text_parms^ (tparm);
+  tparm.width := 0.72;
+  tparm.height := 1.0;
+  tparm.slant := 0.0;
+  tparm.rot := 0.0;
+  tparm.lspace := 0.7;
+  tparm.coor_level := rend_space_2d_k;
+  tparm.poly := false;
+
   rend_get.vect_parms^ (vparm);
+  vparm.poly_level := rend_space_none_k;
+  vparm.subpixel := true;
+  rend_set.vect_parms^ (vparm);
+
   rend_get.poly_parms^ (pparm);
+  pparm.subpixel := true;
+  rend_set.poly_parms^ (pparm);
 
   rend_get.clip_2dim_handle^ (cliph);  {create 2DIM clip window, get handle}
 
@@ -79,6 +133,7 @@ begin
 }
 resize:
   rend_set.enter_rend^;
+  rend_set.dev_reconfig^;              {look at device parameters and reconfigure}
   rend_get.image_size^ (devdx, devdy, devasp); {get draw area size, aspect ratio}
 
   if bitmap_alloc then begin           {a bitmap is currently allocated ?}
@@ -96,25 +151,53 @@ resize:
     0, devdx,                          {X drawing limits}
     0, devdy,                          {Y drawing limits}
     true);                             {draw inside, clip outside}
+  {
+  *   Set up the 2d transform for 0,0 in the lower left corner, square
+  *   coordinates, and 100 size for the smallest dimension.  The 2D transform
+  *   converts into a space where 0,0 is in the middle, with the +-1 square
+  *   maximized to the minimum dimension.
+  }
+  xb.x := 2.0 / 100.0;
+  xb.y := 0.0;
+  yb.x := 0.0;
+  yb.y := 2.0 / 100.0;
+  if devasp >= 1.0
+    then begin                         {draw area is wider than tall}
+      ofs.x := -devasp;
+      ofs.y := -1.0;
+      devw := 100.0 * devasp;
+      devh := 100.0;
+      end
+    else begin                         {draw area is taller than wide}
+      ofs.x := -1.0;
+      ofs.y := -1.0 / devasp;
+      devw := 100.0;
+      devh := 100.0 / devasp;
+      end
+    ;
+  rend_set.xform_2d^ (xb, yb, ofs);    {set the 2D transform}
+  {
+  *   Set the text size.  Only the local copy of the text control state is set
+  *   here.  Some state, like the anchor origin, is specific to the instance.
+  *   The RENDlib text control state will be set anyway later before any text is
+  *   drawn.
+  }
+  r := max(                            {make min required text size in pixels}
+    text_minpix,                       {abs min, pixels}
+    devdx * text_minfrx,               {min as fraction of X dimension}
+    devdy * text_minfry);              {min as fraction of Y dimension}
+  ii := trunc(r + 0.999);              {round up to full integer}
+  if not odd(ii) then begin            {even number of pixels ?}
+    ii := ii + 1;                      {make odd, one row will be in center}
+    end;
+  tparm.size := devh * ii / devdy;     {size in 2D space to get desired pixel height}
 
   rend_set.exit_rend^;
 {
 *   Redraw the whole display.
 }
 redraw:
-  rend_set.enter_rend^;
-
-  rend_set.rgb^ (0.2, 0.2, 0.2);
-  rend_prim.clear_cwind^;
-
-  rend_set.rgb^ (0.8, 0.8, 0.8);
-  rend_set.cpnt_2dim^ (devdx, devdy/2);
-  rend_prim.vect_2dimcl^ (devdx/2, 0);
-  rend_prim.vect_2dimcl^ (0, devdy/2);
-  rend_prim.vect_2dimcl^ (devdx/2, devdy);
-  rend_prim.vect_2dimcl^ (devdx, devdy/2);
-
-  rend_set.exit_rend^;
+  csvana_redraw;                       {redraw whole display with current parameters}
 {
 *   Handle events.
 }
