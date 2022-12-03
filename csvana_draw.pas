@@ -493,6 +493,9 @@ procedure csvana_draw (                {draw section of CSV data}
 
 var
   ev: rend_event_t;                    {last RENDlib event received}
+  evwait: boolean;                     {wait on next event}
+  do_resize: boolean;                  {update to resize pending}
+  do_redraw: boolean;                  {redraw pending}
   stat: sys_err_t;                     {completion status}
 
 label
@@ -554,29 +557,51 @@ begin
   rend_set.exit_rend^;
 
 resize:                                {reconfigure to current drawing area size}
+  do_resize := false;                  {clear pending update to new size}
   csvana_resize;
 
 redraw:
+  do_redraw := false;                  {clear pending redraw required}
   csvana_redraw;                       {redraw whole display with current parameters}
 
-next_event:                            {back here to get the next event}
   rend_set.enter_level^ (0);           {make sure to be out of graphics mode}
-  rend_event_get (ev);                 {wait for the next event}
+  evwait := true;                      {wait for next event}
+
+next_event:                            {back here to get the next event}
+  if evwait
+    then begin                         {wait for next event}
+      rend_event_get (ev);             {get next event, wait as long as it takes}
+      end
+    else begin                         {get immediate event}
+      rend_event_get_nowait (ev);      {get what is available now, even if none}
+      end
+    ;
   case ev.ev_type of                   {what kind of event is it ?}
+
+rend_ev_none_k: begin                  {no event is immediately available}
+      if do_resize then goto resize;   {go do any pending service}
+      if do_redraw then goto redraw;
+      evwait := true;                  {no action pending, wait indefinitely for next event}
+      end;
 
 rend_ev_close_k,                       {drawing device got closed, RENDlib still open}
 rend_ev_close_user_k: begin            {user wants to close the drawing device}
+      util_mem_context_del (szmem_p);  {delete mem context for current config}
       rend_end;
       return;
       end;
 
 rend_ev_resize_k,                      {drawing area size changed}
 rend_ev_wiped_resize_k: begin          {pixels wiped out due to size change}
-      goto resize;
+      do_resize := true;               {flag pending adjust to new size}
+      evwait := false;                 {process only immediate events}
+      sys_wait (0.050);                {time for related events to show up}
       end;
 
 rend_ev_wiped_rect_k: begin            {rectangle of pixels got wiped out}
-      goto redraw;
+      do_redraw := true;               {flag pending redraw}
+      evwait := false;                 {process only immediate events}
+      sys_wait (0.050);                {time for related events to show up}
       end;
 
     end;                               {end of event type cases}
