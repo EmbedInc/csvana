@@ -6,6 +6,7 @@ define csvana_draw;
 %include 'vect.ins.pas';
 %include 'img.ins.pas';
 %include 'rend.ins.pas';
+%include 'gui.ins.pas';
 
 const
   text_minfrx = 1.0 / 90.0;            {min text size, fraction of X dimension}
@@ -27,12 +28,14 @@ var
   devasp: real;                        {drawing device aspect ratio}
   devw, devh: real;                    {drawing device size, 2D space}
   pixw, pixh: real;                    {width and height of 1 pixel in 2D space}
+  szmem_p: util_mem_context_p_t;       {mem context for this config, cleared on resize}
   {
   *   Application configuration state.  This can change with the drawing area
   *   size.
   }
   namesx: real;                        {X of data value names right ends}
   datlx, datrx: real;                  {left and right X of data bars}
+  datdx: real;                         {data bars X range}
   datvalh: real;                       {height of each data value bar}
   induby: real;                        {bottom Y of independent variable units}
   indlty: real;                        {top Y of independent variable labels}
@@ -40,11 +43,28 @@ var
   indtuby: real;                       {bottom Y of ind value unlabled tick marks}
   datv1y: real;                        {center Y of first data value bar}
   datvdy: real;                        {DY for each successive data value bar}
+  xticks_p: gui_tick_p_t;              {tick marks for X axis labels}
   {
   *   Current application control state.
   }
   csv_p: csvana_root_p_t;              {points to root of CSV file data}
   datt1, datt2: double;                {data time range to display}
+  datdt: double;                       {data time interval size}
+{
+********************************************************************************
+*
+*   Local function TIMEX (T)
+*
+*   Returns the X coordinate for the data time T.
+}
+function timex (                       {get display X for a data time}
+  in      t: double)                   {data time to get X coordinate for}
+  :real;                               {X in RENDlib 2D space}
+  val_param; internal;
+
+begin
+  timex := ((t - datt1) * datdx / datdt) + datlx;
+  end;
 {
 ********************************************************************************
 *
@@ -87,6 +107,12 @@ var
   name_p: csvana_name_p_t;             {to dependent value name descriptor}
 
 begin
+  if szmem_p <> nil then begin         {mem context exists for previous size ?}
+    util_mem_context_del (szmem_p);    {delete all dyn mem for old size config}
+    end;
+  util_mem_context_get (               {make mem context for the size config}
+    util_top_mem_context, szmem_p);
+
   rend_set.enter_rend^;
 {
 *   Reconfigure RENDlib for drawing into the new current draw area.
@@ -173,7 +199,9 @@ begin
   }
   datvalh := tparm.size * 1.2;         {0 to 1 height of each data value bar}
   datlx := namesx + max(2.0 * pixw, tparm.size * 0.1); {left X of data value bars}
-  datrx := devw - (2.0 * pixw);        {right X of data value bars}
+  datrx :=                             {leave room at right for some label chars}
+    devw - (2.0 * tparm.size * tparm.width);
+  datdx := datrx - datlx;
 
   induby := tparm.size * 0.5;          {bottom of independent variable units text}
   indlty := induby + (tparm.size * 2.5); {top of ind variable axis labels}
@@ -190,6 +218,13 @@ begin
       );
     end;
 
+  gui_ticks_make (                     {compute X axis labels and tick marks}
+    datt1, datt2,                      {values range}
+    datrx - datlx,                     {coordinate range to display over}
+    true,                              {labels will be stacked horizontally}
+    szmem_p^,                          {parent memory context for tick mark descriptors}
+    xticks_p);                         {returned pointer to first tick mark}
+
   rend_set.exit_rend^;
   end;
 {
@@ -197,8 +232,8 @@ begin
 *
 *   Local subroutine DRAW_DEPVAR (N)
 *
-*   Draw the data for the Nth dependent variable.  N is in the range of 1 to
-*   CSV.NVALS.
+*   Draw the data for the Nth dependent variable.  N must be in the range of 1
+*   to CSV.NVALS.
 }
 procedure draw_depvar (                {draw data for dependent variable}
   in      n: sys_int_machine_t);       {1-N number of the dependent variable}
@@ -227,6 +262,7 @@ label
 ****************************************
 *
 *   Internal subroutine GET_POINT (P)
+*   This routine is internal to DRAW_DEPVAR.
 *
 *   Get the info about the data value N within the current record (pointed to by
 *   REC_P).
@@ -250,10 +286,7 @@ begin
     goto have_inout;
     end;
   p.inout := inout_in_k;               {within displayable range}
-  p.x :=
-    datlx +                            {offset for 0 into range}
-    ((rec_p^.time - datt1)/(datt2 - datt1)) * {fraction into range}
-    (datrx - datlx);                   {size of display range}
+  p.x := timex (rec_p^.time);          {X for this data time}
 have_inout:                            {INOUT and X all set}
 
   if (n < 1) or (n > csv_p^.nrec) then begin {invalid variable number}
@@ -271,9 +304,10 @@ have_inout:                            {INOUT and X all set}
 *   Start of executable code for subroutine DRAW_DEPVAR.
 }
 begin
-(*
+
+
+
   if n > 2 then return;                {***** TEMP DEBUG for speedup *****}
-*)
 
 
 
@@ -340,6 +374,7 @@ var
   name_p: csvana_name_p_t;             {to dependent variable name}
   ii: sys_int_machine_t;               {scratch integer}
   x, y: real;                          {scratch coordinate}
+  tick_p: gui_tick_p_t;                {to current tick mark descriptor}
 
 begin
   rend_set.enter_rend^;
@@ -349,7 +384,7 @@ begin
 {
 *   Draw the names of each dependent variable.
 }
-  rend_set.rgb^ (0.7, 0.7, 0.7);
+  rend_set.rgb^ (0.70, 0.70, 0.70);
   tparm.start_org := rend_torg_mr_k;   {anchor text at right center}
   rend_set.text_parms^ (tparm);
 
@@ -373,9 +408,58 @@ begin
   rend_set.cpnt_2d^ (x, induby);
   rend_prim.text^ ('Seconds', 7);
 {
+*   Draw the X tick marks and X axis labels.  All the tick marks are in minor to
+*   major order starting at XTICKS_P.  The list of ticks is traversed twice.
+*   the vertical tick lines are drawn the first pass, with labels written on the
+*   second pass.  This is because the labels and tick line have different
+*   colors.
+}
+  {
+  *   Draw the vertical lines for each tick.
+  }
+  ii := -1;                            {init current tick level to invalid}
+  tick_p := xticks_p;                  {init to first tick in list}
+  while tick_p <> nil do begin         {scan the list of tick marks}
+    if tick_p^.level <> ii then begin  {starting a new level ?}
+      ii := tick_p^.level;             {remember level now at}
+      case ii of                       {special handling per level}
+0:      begin                          {major tick}
+          rend_set.rgb^ (0.25, 0.25, 0.25);
+          y := indtlby;
+          end;
+1:      begin                          {one level subordinate}
+          rend_set.rgb^ (0.20, 0.20, 0.20);
+          y := indtuby;
+          end;
+otherwise                              {all other more subordinate ticks}
+        rend_set.rgb^ (0.15, 0.15, 0.15);
+        y := indtuby;
+        end;
+      end;                             {end of switching to new tick level}
+    x := timex (tick_p^.val);          {make X for this data time}
+    rend_set.cpnt_2d^ (x, y);          {draw vertical line for this tick}
+    rend_prim.vect_2d^ (x, devh);
+    tick_p := tick_p^.next_p;          {to next tick descriptor}
+    end;                               {back to do next tick}
+  {
+  *   Draw the labels for each tick with a label string.
+  }
+  rend_set.rgb^ (0.70, 0.70, 0.70);
+  tparm.start_org := rend_torg_um_k;   {anchor text at upper middle}
+  rend_set.text_parms^ (tparm);
+
+  tick_p := xticks_p;                  {init to first tick in list}
+  while tick_p <> nil do begin         {scan the list of tick marks}
+    if tick_p^.lab.len > 0 then begin  {this tick has a label string ?}
+      rend_set.cpnt_2d^ (timex(tick_p^.val), indlty);
+      rend_prim.text^ (tick_p^.lab.str, tick_p^.lab.len);
+      end;
+    tick_p := tick_p^.next_p;          {to next tick descriptor}
+    end;                               {back to do next tick}
+{
 *   Draw the data bar backgrounds.
 }
-  rend_set.rgb^ (0.25, 0.25, 0.25);
+  rend_set.rgb^ (0.30, 0.30, 0.30);
   for ii := 0 to csv_p^.nvals-1 do begin {up the data bars}
     y := datv1y + (datvdy * ii);       {make center Y for this data value}
     y := y - (datvalh / 2.0);          {bottom Y of this data bar}
@@ -418,10 +502,11 @@ begin
   csv_p := addr(csv);                  {save control parameters}
   datt1 := t1;
   datt2 := t2;
+  datdt := datt2 - datt1;
 
   rend_start;                          {start up RENDlib}
   rend_open (                          {create the RENDlib drawing device}
-    string_v('screen'(0)),             {device name}
+    string_v('right'(0)),              {device name}
     rendev,                            {returned RENDlib device ID}
     stat);
   sys_error_abort (stat, '', '', nil, 0);
@@ -465,6 +550,7 @@ begin
   rend_get.clip_2dim_handle^ (cliph);  {create 2DIM clip window, get handle}
 
   rend_set.update_mode^ (rend_updmode_buffall_k);
+  szmem_p := nil;                      {init to no mem context for current size}
   rend_set.exit_rend^;
 
 resize:                                {reconfigure to current drawing area size}
