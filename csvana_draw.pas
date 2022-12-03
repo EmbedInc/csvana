@@ -1,7 +1,7 @@
 {   Drawing routines.  The drawing state is kept internal to this module.
 }
 module csvana_draw;
-define csvana_draw;
+define csvana_draw_run;
 %include 'csvana.ins.pas';
 %include 'vect.ins.pas';
 %include 'img.ins.pas';
@@ -50,6 +50,7 @@ var
   csv_p: csvana_root_p_t;              {points to root of CSV file data}
   datt1, datt2: double;                {data time range to display}
   datdt: double;                       {data time interval size}
+  devname: string_var80_t;             {RENDlib drawing device name}
 {
 ********************************************************************************
 *
@@ -481,14 +482,14 @@ otherwise                              {all other more subordinate ticks}
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DRAW (CSV, T1, T2)
+*   Local subroutine CSVANA_DRAW
 *
-*   Show the CSV data, initially from relative time T1 to T2.  User interactions
-*   may subsequently change what is shown.
+*   This routine is run in a separate thread.  It draws the data, then services
+*   graphics events until the drawing device is closed or the user requests it
+*   to be closed.
 }
-procedure csvana_draw (                {draw section of CSV data}
-  in      csv: csvana_root_t;          {CSV data to draw}
-  in      t1, t2: double);             {initial time interval to show}
+procedure csvana_draw (                {thread to do drawing in background}
+  in      arg: sys_int_adr_t);         {arbitrary argument, unused}
   val_param;
 
 var
@@ -502,14 +503,13 @@ label
   resize, redraw, next_event;
 
 begin
-  csv_p := addr(csv);                  {save control parameters}
-  datt1 := t1;
-  datt2 := t2;
-  datdt := datt2 - datt1;
-
   rend_start;                          {start up RENDlib}
+
+  if devname.len <= 0 then begin       {drawing device name not specified ?}
+    string_vstring (devname, 'right'(0), -1); {use default}
+    end;
   rend_open (                          {create the RENDlib drawing device}
-    string_v('right'(0)),              {device name}
+    devname,                           {device name}
     rendev,                            {returned RENDlib device ID}
     stat);
   sys_error_abort (stat, '', '', nil, 0);
@@ -606,4 +606,43 @@ rend_ev_wiped_rect_k: begin            {rectangle of pixels got wiped out}
 
     end;                               {end of event type cases}
   goto next_event;                     {done processing this event, back for next}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DRAW_RUN (CSV, RENDEV, T1, T2)
+*
+*   Start the background thread to draw the CSV data.
+*
+*   RENDEV is the RENDlib device name to use for the drawing.  When RENDEV is
+*   the empty string, then a default is automatically chosen.
+*
+*   T1 and T2 are the initial data time interval to show.
+*
+*   This routine only launches the background drawing task and returns quickly.
+}
+procedure csvana_draw_run (            {start drawing, runs in separate thread}
+  in      csv: csvana_root_t;          {CSV data to draw}
+  in      rendev: univ string_var_arg_t; {name of draw dev to use, blank = default}
+  in      t1, t2: double);             {initial time interval to show}
+  val_param;
+
+var
+  thid: sys_sys_thread_id_t;           {ID of drawing thread}
+  stat: sys_err_t;                     {completion status}
+
+begin
+  csv_p := addr(csv);                  {save control parameters}
+  datt1 := t1;
+  datt2 := t2;
+  datdt := datt2 - datt1;
+  devname.max := size_char(devname.str);
+  string_copy (rendev, devname);
+
+  sys_thread_create (                  {start the drawing thread}
+    addr(csvana_draw),                 {pointer to root thread routine}
+    0,                                 {argument passed to thread, not used}
+    thid,                              {returned thread ID}
+    stat);
+  sys_error_abort (stat, '', '', nil, 0);
   end;

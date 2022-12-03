@@ -39,8 +39,9 @@ type
     rec_last_p: csvana_rec_p_t;        {to last record in list}
     end;
 
-procedure csvana_draw (                {draw section of CSV data}
+procedure csvana_draw_run (            {start drawing, runs in separate thread}
   in      csv: csvana_root_t;          {CSV data to draw}
+  in      rendev: univ string_var_arg_t; {name of draw dev to use, blank = default}
   in      t1, t2: double);             {initial time interval to show}
   val_param; extern;
 
