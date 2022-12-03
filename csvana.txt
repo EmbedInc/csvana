@@ -23,3 +23,10 @@ The command line options are:
     Specifies the RENDlib device to draw onto.  The default is "right",
     which is usually a drawing window taking up the rest of the space to
     the right of a left-justified command shell.
+
+  -ST time
+  -EN time
+
+    Sets the relative starting (-ST) and ending (-EN) data time to
+    display.  The time is in seconds from the start of the first data
+    record.

@@ -27,12 +27,14 @@ var
 var
   fnam:                                {CSV input file name}
     %include '(cog)lib/string_treename.ins.pas';
-  iname_set: boolean;                  {TRUE if the input file name already set}
   rendev:                              {name of RENDlib drawing device to use}
     %include '(cog)lib/string80.ins.pas';
   root_p: csvana_root_p_t;             {to root CSV file data structure}
   prompt:                              {prompt string for entering command}
     %include '(cog)lib/string4.ins.pas';
+  tst, ten: double;                    {starting/ending data time to display}
+  iname_set: boolean;                  {TRUE if the input file name already set}
+  tst_set, ten_set: boolean;           {start/end data time on command line}
 
   opt:                                 {upcased command line option}
     %include '(cog)lib/string_treename.ins.pas';
@@ -60,6 +62,8 @@ begin
 }
   string_cmline_init;                  {init for reading the command line}
   iname_set := false;                  {no input file name specified}
+  tst_set := false;                    {init to data time limits not specified}
+  ten_set := false;
 {
 *   Back here each new command line option.
 }
@@ -78,7 +82,7 @@ next_opt:
     end;
   string_upcase (opt);                 {make upper case for matching list}
   string_tkpick80 (opt,                {pick command line option name from list}
-    '-IN -DEV',
+    '-IN -DEV -ST -EN',
     pick);                             {number of keyword picked from list}
   case pick of                         {do routine for specific option}
 {
@@ -98,6 +102,20 @@ next_opt:
 }
 2: begin
   string_cmline_token (rendev, stat);
+  end;
+{
+*   -ST
+}
+3: begin
+  string_cmline_token_fp2 (tst, stat);
+  tst_set := true;
+  end;
+{
+*  -EN
+}
+4: begin
+  string_cmline_token_fp2 (ten, stat);
+  ten_set := true;
   end;
 {
 *   Unrecognized command line option.
@@ -149,11 +167,16 @@ done_opts:                             {done with all the command line options}
       (root_p^.nrec >= 2) and          {at least two records ?}
       (root_p^.rec_last_p^.time > root_p^.rec_p^.time) {there is a time difference ?}
       then begin
+    if not tst_set then begin          {start time not set on command line ?}
+      tst := root_p^.rec_p^.time;      {default to whole data start time}
+      end;
+    if not ten_set then begin          {end time not set on command line ?}
+      ten := root_p^.rec_last_p^.time; {default to whole data end time}
+      end;
     csvana_draw_run (                  {show the data graphically}
       root_p^,                         {the data to show}
       rendev,                          {name of drawing device to use, blank for default}
-      root_p^.rec_p^.time,             {starting time to show}
-      root_p^.rec_last_p^.time);       {ending time to show}
+      tst, ten);                       {initial data start/end time interval to show}
     end;
 {
 *   Let the user enter commands at a command prompt.
