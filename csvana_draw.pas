@@ -308,8 +308,9 @@ begin
 
 
 
+(*
   if n > 2 then return;                {***** TEMP DEBUG for speedup *****}
-
+*)
 
 
   ybot :=                              {data bar bottom Y}
