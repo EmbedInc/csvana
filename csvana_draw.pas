@@ -50,7 +50,8 @@ var
   csv_p: csvana_root_p_t;              {points to root of CSV file data}
   datt1, datt2: double;                {data time range to display}
   datdt: double;                       {data time interval size}
-  meas1, meas2: real;                  {start/end measuring interval data values}
+  meas1, meas2: double;                {start/end measuring interval data values}
+  curs: double;                        {cursor data value}
   devname: string_var80_t;             {RENDlib drawing device name}
 {
 ********************************************************************************
@@ -100,6 +101,8 @@ begin
 *   Clip the measurement interval to the currently displayed range.  The
 *   interval from MEAS1 to MEAS2 will also be guaranteed to be in ascending
 *   order, and a minimum fraction of the displayed range.
+*
+*   The data cursor is also clipped to the displayed range.
 }
 procedure meas_clip;                   {clip measurement interval to displayed range}
   val_param; internal;
@@ -117,6 +120,8 @@ begin
   meas2 := max(meas2, meas1 + d);
   meas2 := min(meas2, datt2);
   meas1 := min(meas1, meas2 - d);
+
+  curs := min(datt2, max(datt1, curs)); {clip cursor to displayed range}
   end;
 {
 ********************************************************************************
@@ -517,13 +522,16 @@ otherwise                              {all other more subordinate ticks}
     tick_p := tick_p^.next_p;          {to next tick descriptor}
     end;                               {back to do next tick}
 {
-*   Draw the measurement interval start and end lines.
+*   Draw the measurement interval start and end lines and the data cursor.
 }
   rend_set.rgb^ (0.2, 1.0, 0.2);       {interval start indicator}
   draw_meas (meas1);
 
   rend_set.rgb^ (1.0, 0.2, 0.2);       {interval end indicator}
   draw_meas (meas2);
+
+  rend_set.rgb^ (0.2, 0.2, 1.0);       {data cursor}
+  draw_meas (curs);
 {
 *   Draw the data bar backgrounds.
 }
@@ -709,6 +717,7 @@ begin
 
   meas1 := datt1;                      {init measurement interval to full data range}
   meas2 := datt2;
+  curs := (meas1 + meas2) / 2.0;       {init data cursor value}
 
   sys_thread_create (                  {start the drawing thread}
     addr(csvana_draw),                 {pointer to root thread routine}
