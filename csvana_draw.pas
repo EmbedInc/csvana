@@ -50,6 +50,7 @@ var
   csv_p: csvana_root_p_t;              {points to root of CSV file data}
   datt1, datt2: double;                {data time range to display}
   datdt: double;                       {data time interval size}
+  meas1, meas2: real;                  {start/end measuring interval data values}
   devname: string_var80_t;             {RENDlib drawing device name}
 {
 ********************************************************************************
@@ -90,6 +91,32 @@ begin
     bv, up, ll);                       {returned drawing box parameters}
 
   text_width := sqrt(sqr(bv.x) + sqr(bv.y)); {text basline length}
+  end;
+{
+********************************************************************************
+*
+*   Local subroutine MEAS_CLIP
+*
+*   Clip the measurement interval to the currently displayed range.  The
+*   interval from MEAS1 to MEAS2 will also be guaranteed to be in ascending
+*   order, and a minimum fraction of the displayed range.
+}
+procedure meas_clip;                   {clip measurement interval to displayed range}
+  val_param; internal;
+
+const
+  minmeas = 0.01;                      {min meas interval as fraction of disp range}
+
+var
+  d: double;                           {min meas interval size}
+
+begin
+  d := datdt * minmeas;                {make min meas interval size}
+
+  meas1 := max(meas1, datt1);          {clip measurement interval to data range}
+  meas2 := max(meas2, meas1 + d);
+  meas2 := min(meas2, datt2);
+  meas1 := min(meas1, meas2 - d);
   end;
 {
 ********************************************************************************
@@ -203,6 +230,7 @@ begin
   datrx :=                             {leave room at right for some label chars}
     devw - (3.5 * tparm.size * tparm.width);
   datdx := datrx - datlx;
+  meas_clip;                           {clip measurement range displayed range}
 
   induby := tparm.size * 0.5;          {bottom of independent variable units text}
   indlty := induby + (tparm.size * 2.5); {top of ind variable axis labels}
@@ -305,14 +333,6 @@ have_inout:                            {INOUT and X all set}
 *   Start of executable code for subroutine DRAW_DEPVAR.
 }
 begin
-
-
-
-(*
-  if n > 2 then return;                {***** TEMP DEBUG for speedup *****}
-*)
-
-
   ybot :=                              {data bar bottom Y}
     datv1y + (datvdy * (n - 1)) - (datvalh / 2.0);
 
@@ -361,6 +381,44 @@ next_rec:                              {done with this record, on to next}
       end;
     rend_prim.vect_2d^ (pcurr.x, pprev.y); {old value up to this point}
     end;
+  end;
+{
+********************************************************************************
+*
+*   Local subroutine DRAW_MEAS (T)
+*
+*   Draw a measurement indicator at the data value T.
+}
+procedure draw_meas (                  {draw measurement indictor}
+  in      t: double);                  {time value to draw indicator at}
+  val_param; internal;
+
+const
+  polyn = 3;                           {max points in 2D polygon}
+
+var
+  x: real;                             {X coordinate to draw indicator at}
+  y: real;                             {bottom Y of vertical indicator line}
+  mxofs: real;                         {left/right offset of marker triangle}
+  mdy: real;                           {height of marker triangle}
+  poly: array[1..polyn] of vect_2d_t;  {2D polygon verticies}
+
+begin
+  x := timex(t);                       {X to draw indicator at}
+  y := datv1y - (datvalh * 0.5);       {Y of bottom of vertical indicator line}
+  mdy := tparm.size * 0.5;             {height of marker triangle}
+  mxofs := mdy * 0.5;                  {half-width of marker triangle}
+
+  rend_set.cpnt_2d^ (x, devh);         {draw the vertical indicator line}
+  rend_prim.vect_2d^ (x, y);
+
+  poly[1].x := x;                      {draw marker}
+  poly[1].y := y;
+  poly[2].x := x - mxofs;
+  poly[2].y := y - mdy;
+  poly[3].x := x + mxofs;
+  poly[3].y := y - mdy;
+  rend_prim.poly_2d^ (3, poly);
   end;
 {
 ********************************************************************************
@@ -458,6 +516,14 @@ otherwise                              {all other more subordinate ticks}
       end;
     tick_p := tick_p^.next_p;          {to next tick descriptor}
     end;                               {back to do next tick}
+{
+*   Draw the measurement interval start and end lines.
+}
+  rend_set.rgb^ (0.2, 1.0, 0.2);       {interval start indicator}
+  draw_meas (meas1);
+
+  rend_set.rgb^ (1.0, 0.2, 0.2);       {interval end indicator}
+  draw_meas (meas2);
 {
 *   Draw the data bar backgrounds.
 }
@@ -640,6 +706,9 @@ begin
   datdt := datt2 - datt1;
   devname.max := size_char(devname.str);
   string_copy (rendev, devname);
+
+  meas1 := datt1;                      {init measurement interval to full data range}
+  meas2 := datt2;
 
   sys_thread_create (                  {start the drawing thread}
     addr(csvana_draw),                 {pointer to root thread routine}
