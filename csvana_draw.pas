@@ -201,7 +201,7 @@ begin
   datvalh := tparm.size * 1.2;         {0 to 1 height of each data value bar}
   datlx := namesx + max(2.0 * pixw, tparm.size * 0.1); {left X of data value bars}
   datrx :=                             {leave room at right for some label chars}
-    devw - (2.0 * tparm.size * tparm.width);
+    devw - (3.5 * tparm.size * tparm.width);
   datdx := datrx - datlx;
 
   induby := tparm.size * 0.5;          {bottom of independent variable units text}
@@ -589,7 +589,8 @@ rend_ev_close_k,                       {drawing device got closed, RENDlib still
 rend_ev_close_user_k: begin            {user wants to close the drawing device}
       util_mem_context_del (szmem_p);  {delete mem context for current config}
       rend_end;
-      return;
+      writeln;                         {finish any partially written line}
+      sys_exit;                        {end the program}
       end;
 
 rend_ev_resize_k,                      {drawing area size changed}
