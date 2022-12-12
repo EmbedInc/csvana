@@ -6,6 +6,10 @@
 %include 'string.ins.pas';
 %include 'file.ins.pas';
 %include 'stuff.ins.pas';
+%include 'vect.ins.pas';
+%include 'img.ins.pas';
+%include 'rend.ins.pas';
+%include 'gui.ins.pas';
 %include 'builddate.ins.pas';
 
 type
@@ -39,10 +43,65 @@ type
     rec_last_p: csvana_rec_p_t;        {to last record in list}
     end;
 
-procedure csvana_draw_run (            {start drawing, runs in separate thread}
-  in      csv: csvana_root_t;          {CSV data to draw}
-  in      rendev: univ string_var_arg_t; {name of draw dev to use, blank = default}
-  in      t1, t2: double);             {initial time interval to show}
+var (csvana)
+  {
+  *   RENDlib configuration state.
+  }
+  devname: string_var80_t;             {RENDlib drawing device name}
+  rendev: rend_dev_id_t;               {RENDlib ID for our drawing device}
+  bitmap: rend_bitmap_handle_t;        {handle to our pixels bitmap}
+  bitmap_alloc: boolean;               {bitmap memory is allocated}
+  tparm: rend_text_parms_t;            {text drawing control parameters}
+  vparm: rend_vect_parms_t;            {vector drawing control parameters}
+  pparm: rend_poly_parms_t;            {polygon drawing control parameters}
+  cliph: rend_clip_2dim_handle_t;      {clip rectangle handle}
+  devdx, devdy: sys_int_machine_t;     {drawing device size, pixels}
+  devasp: real;                        {drawing device aspect ratio}
+  devw, devh: real;                    {drawing device size, 2D space}
+  pixw, pixh: real;                    {width and height of 1 pixel in 2D space}
+  szmem_p: util_mem_context_p_t;       {mem context for this config, cleared on resize}
+  {
+  *   Drawing configuration state.  This can change with the drawing area size.
+  }
+  namesx: real;                        {X of data value names right ends}
+  datlx, datrx: real;                  {left and right X of data bars}
+  datdx: real;                         {data bars X range}
+  datvalh: real;                       {height of each data value bar}
+  induby: real;                        {bottom Y of independent variable units}
+  indlty: real;                        {top Y of independent variable labels}
+  indtlby: real;                       {bottom Y of ind value labeled tick marks}
+  indtuby: real;                       {bottom Y of ind value unlabled tick marks}
+  datv1y: real;                        {center Y of first data value bar}
+  datvdy: real;                        {DY for each successive data value bar}
+  xticks_p: gui_tick_p_t;              {tick marks for X axis labels}
+  {
+  *   Current application control state.
+  }
+  csv_p: csvana_root_p_t;              {points to root of CSV file data}
+  datt1, datt2: double;                {data time range to display}
+  datdt: double;                       {data time interval size}
+  meas1, meas2: double;                {start/end measuring interval data values}
+  curs: double;                        {cursor data value}
+{
+*   Globally visible subroutines and functions.
+}
+procedure csvana_datt_upd;             {sanitize and update data range control state}
+  val_param; extern;
+
+procedure csvana_draw;                 {refresh the drawing area}
+  val_param; extern;
+
+procedure csvana_draw_thread (         {thread to do drawing in background}
+  in      arg: sys_int_adr_t);         {arbitrary argument, unused}
+  val_param; extern;
+
+procedure csvana_draw_resize;          {udpate to current drawing area size}
+  val_param; extern;
+
+procedure csvana_draw_run;             {start drawing, spawns drawing thread}
+  val_param; extern;
+
+procedure csvana_draw_setup;           {do one-time setup for drawing}
   val_param; extern;
 
 procedure csvana_field_new (           {add new field per record to CSV data}
@@ -75,4 +134,9 @@ procedure csvana_root_del (            {delete all data for a CSV file}
 procedure csvana_root_new (            {allocate and init new root CSV file data}
   in out  mem: util_mem_context_t;     {parent mem context, will create subordinate}
   out     root_p: csvana_root_p_t);    {to returned initialized root data structure}
+  val_param; extern;
+
+function dattx (                       {make 2D X from data X value}
+  in      t: double)                   {data independent variable value}
+  :real;                               {returned 2D X coordinate}
   val_param; extern;

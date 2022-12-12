@@ -1,6 +1,7 @@
 {   Program CSVANA csvfile
 }
 program csvana;
+define csvana;
 %include csvana.ins.pas;
 
 const
@@ -27,12 +28,8 @@ var
 var
   fnam:                                {CSV input file name}
     %include '(cog)lib/string_treename.ins.pas';
-  rendev:                              {name of RENDlib drawing device to use}
-    %include '(cog)lib/string80.ins.pas';
-  root_p: csvana_root_p_t;             {to root CSV file data structure}
   prompt:                              {prompt string for entering command}
     %include '(cog)lib/string4.ins.pas';
-  tst, ten: double;                    {starting/ending data time to display}
   iname_set: boolean;                  {TRUE if the input file name already set}
   tst_set, ten_set: boolean;           {start/end data time on command line}
 
@@ -57,6 +54,8 @@ label
 *   Start of main program.
 }
 begin
+  devname.max := size_char(devname.str); {init RENDlib device name}
+  devname.len := 0;
 {
 *   Initialize before reading the command line.
 }
@@ -101,20 +100,20 @@ next_opt:
 *   -DEV name
 }
 2: begin
-  string_cmline_token (rendev, stat);
+  string_cmline_token (devname, stat);
   end;
 {
 *   -ST
 }
 3: begin
-  string_cmline_token_fp2 (tst, stat);
+  string_cmline_token_fp2 (datt1, stat);
   tst_set := true;
   end;
 {
 *  -EN
 }
 4: begin
-  string_cmline_token_fp2 (ten, stat);
+  string_cmline_token_fp2 (datt2, stat);
   ten_set := true;
   end;
 {
@@ -146,15 +145,15 @@ done_opts:                             {done with all the command line options}
   csvana_read_file (                   {read the CSV file, save data in memory}
     fnam,                              {name of CSV file to read}
     util_top_mem_context,              {parent mem context, will create subordinate}
-    root_p,                            {returned pointer to CSV file data}
+    csv_p,                             {returned pointer to CSV file data}
     stat);
   sys_error_abort (stat, '', '', nil, 0);
 
-  writeln ('CSV file "', root_p^.tnam.str:root_p^.tnam.len, '":');
-  writeln ('  ', root_p^.nvals, ' dependent values');
-  writeln ('  ', root_p^.nrec, ' data records');
-  if root_p^.rec_last_p <> nil then begin
-    string_f_fp_fixed (fnam, root_p^.rec_last_p^.time, 3);
+  writeln ('CSV file "', csv_p^.tnam.str:csv_p^.tnam.len, '":');
+  writeln ('  ', csv_p^.nvals, ' dependent values');
+  writeln ('  ', csv_p^.nrec, ' data records');
+  if csv_p^.rec_last_p <> nil then begin
+    string_f_fp_fixed (fnam, csv_p^.rec_last_p^.time, 3);
     writeln ('  ', fnam.str:fnam.len, ' seconds of data');
     end;
 {
@@ -164,19 +163,22 @@ done_opts:                             {done with all the command line options}
 *   the user.
 }
   if
-      (root_p^.nrec >= 2) and          {at least two records ?}
-      (root_p^.rec_last_p^.time > root_p^.rec_p^.time) {there is a time difference ?}
+      (csv_p^.nrec >= 2) and           {at least two records ?}
+      (csv_p^.rec_last_p^.time > csv_p^.rec_p^.time) {there is a time difference ?}
       then begin
     if not tst_set then begin          {start time not set on command line ?}
-      tst := root_p^.rec_p^.time;      {default to whole data start time}
+      datt1 := csv_p^.rec_p^.time;     {default to whole data start time}
       end;
     if not ten_set then begin          {end time not set on command line ?}
-      ten := root_p^.rec_last_p^.time; {default to whole data end time}
+      datt2 := csv_p^.rec_last_p^.time; {default to whole data end time}
       end;
-    csvana_draw_run (                  {show the data graphically}
-      root_p^,                         {the data to show}
-      rendev,                          {name of drawing device to use, blank for default}
-      tst, ten);                       {initial data start/end time interval to show}
+    meas1 := datt1;                    {init meas interval to full display range}
+    meas2 := datt2;
+    curs := (datt1 + datt2) / 2.0;     {init data cursor to middle of disp range}
+    csvana_datt_upd;                   {update and sanitize data range control state}
+
+    csvana_draw_setup;                 {do one-time drawing setup}
+    csvana_draw_run;                   {state drawing thread, show data graphically}
     end;
 {
 *   Let the user enter commands at a command prompt.
