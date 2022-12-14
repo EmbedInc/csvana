@@ -178,7 +178,7 @@ done_opts:                             {done with all the command line options}
     csvana_datt_upd;                   {update and sanitize data range control state}
 
     csvana_draw_setup;                 {do one-time drawing setup}
-    csvana_draw_run;                   {state drawing thread, show data graphically}
+    csvana_draw_run;                   {start background drawing}
     end;
 {
 *   Let the user enter commands at a command prompt.

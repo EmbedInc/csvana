@@ -60,6 +60,9 @@ var (csvana)
   devw, devh: real;                    {drawing device size, 2D space}
   pixw, pixh: real;                    {width and height of 1 pixel in 2D space}
   szmem_p: util_mem_context_p_t;       {mem context for this config, cleared on resize}
+  evdrtask: sys_sys_event_id_t;        {drawing task pending, sig when DO_xxx set}
+  do_resize: boolean;                  {need to adjust to graphics device size}
+  do_redraw: boolean;                  {need to refresh drawing}
   {
   *   Drawing configuration state.  This can change with the drawing area size.
   }
@@ -82,10 +85,17 @@ var (csvana)
   datdt: double;                       {data time interval size}
   meas1, meas2: double;                {start/end measuring interval data values}
   curs: double;                        {cursor data value}
+
 {
 *   Globally visible subroutines and functions.
 }
 procedure csvana_datt_upd;             {sanitize and update data range control state}
+  val_param; extern;
+
+procedure csvana_do_redraw;            {cause drawing thread to redraw display}
+  val_param; extern;
+
+procedure csvana_do_resize;            {cause drawing thread to resize to display}
   val_param; extern;
 
 procedure csvana_draw;                 {refresh the drawing area}
@@ -102,6 +112,13 @@ procedure csvana_draw_run;             {start drawing, spawns drawing thread}
   val_param; extern;
 
 procedure csvana_draw_setup;           {do one-time setup for drawing}
+  val_param; extern;
+
+procedure csvana_events_setup;         {set up RENDlib events as we will use them}
+  val_param; extern;
+
+procedure csvana_events_thread (       {thread to handle graphics events}
+  in      arg: sys_int_adr_t);         {arbitrary argument, unused}
   val_param; extern;
 
 procedure csvana_field_new (           {add new field per record to CSV data}

@@ -2,79 +2,64 @@
 }
 module csvana_draw_thread;
 define csvana_draw_thread;
+define csvana_do_resize;
+define csvana_do_redraw;
 %include 'csvana.ins.pas';
 {
 ********************************************************************************
 *
 *   Local subroutine CSVANA_DRAW_THREAD
 *
-*   This routine is run in a separate thread.  It draws the data, then services
-*   graphics events until the drawing device is closed or the user requests it
-*   to be closed.
+*   This routine is run in a separate thread.  It responds to request to resize
+*   to the drawing area and to refresh the drawing area.
 }
 procedure csvana_draw_thread (         {thread to do drawing in background}
   in      arg: sys_int_adr_t);         {arbitrary argument, unused}
   val_param;
 
 var
-  ev: rend_event_t;                    {last RENDlib event received}
-  evwait: boolean;                     {wait on next event}
-  do_resize: boolean;                  {update to resize pending}
-  do_redraw: boolean;                  {redraw pending}
-
-label
-  resize, redraw, next_event;
+  stat: sys_err_t;                     {completion status}
 
 begin
-resize:                                {reconfigure to current drawing area size}
-  do_resize := false;                  {clear pending update to new size}
-  csvana_draw_resize;                  {update drawing state to new draw area size}
-
-redraw:
-  do_redraw := false;                  {clear pending redraw required}
-  csvana_draw;                         {redraw whole display with current parameters}
-
-  rend_set.enter_level^ (0);           {make sure to be out of graphics mode}
-  evwait := true;                      {wait for next event}
-
-next_event:                            {back here to get the next event}
-  if evwait
-    then begin                         {wait for next event}
-      rend_event_get (ev);             {get next event, wait as long as it takes}
-      end
-    else begin                         {get immediate event}
-      rend_event_get_nowait (ev);      {get what is available now, even if none}
-      end
-    ;
-  case ev.ev_type of                   {what kind of event is it ?}
-
-rend_ev_none_k: begin                  {no event is immediately available}
-      if do_resize then goto resize;   {go do any pending service}
-      if do_redraw then goto redraw;
-      evwait := true;                  {no action pending, wait indefinitely for next event}
+  while true do begin                  {back here until nothing to do}
+    if do_resize then begin            {pending resize ?}
+      do_resize := false;              {clear the event condition}
+      csvana_draw_resize;              {do the resize}
+      next;                            {back to check for any pending tasks again}
       end;
-
-rend_ev_close_k,                       {drawing device got closed, RENDlib still open}
-rend_ev_close_user_k: begin            {user wants to close the drawing device}
-      util_mem_context_del (szmem_p);  {delete mem context for current config}
-      rend_end;
-      writeln;                         {finish any partially written line}
-      sys_exit;                        {end the program}
+    if do_redraw then begin            {pending redraw ?}
+      do_redraw := false;              {clear the event condition}
+      csvana_draw;                     {do the redraw}
+      next;                            {back to check for any pending tasks again}
       end;
+    sys_event_wait (evdrtask, stat);   {wait for new task to perform}
+    end;                               {back again to check for something to do}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DO_RESIZE
+*
+*   Cause the drawing thread to resize to the current display device.
+}
+procedure csvana_do_resize;            {cause drawing thread to resize to display}
+  val_param;
 
-rend_ev_resize_k,                      {drawing area size changed}
-rend_ev_wiped_resize_k: begin          {pixels wiped out due to size change}
-      do_resize := true;               {flag pending adjust to new size}
-      evwait := false;                 {process only immediate events}
-      sys_wait (0.050);                {time for related events to show up}
-      end;
+begin
+  do_resize := true;                   {indicate resize pending}
+  sys_event_notify_bool (evdrtask);    {indicate pending drawing task to perform}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DO_REDRAW
+*
+*   Cause the drawing thread to refresh the current display.
+}
+procedure csvana_do_redraw;            {cause drawing thread to redraw display}
+  val_param;
 
-rend_ev_wiped_rect_k: begin            {rectangle of pixels got wiped out}
-      do_redraw := true;               {flag pending redraw}
-      evwait := false;                 {process only immediate events}
-      sys_wait (0.050);                {time for related events to show up}
-      end;
-
-    end;                               {end of event type cases}
-  goto next_event;                     {done processing this event, back for next}
+begin
+  do_redraw := true;                   {indicate redraw pending}
+  sys_event_notify_bool (evdrtask);    {indicate pending drawing task to perform}
   end;

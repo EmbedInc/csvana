@@ -116,6 +116,7 @@ begin
       rend_prim.vect_2d^ (pcurr.x, pprev.y); {old value up to this point}
       rend_prim.vect_2d^ (pcurr.x, pcurr.y); {new value vertically only}
       pprev := pcurr;                  {update previous point for next time}
+      if do_resize then return;        {abort drawing on pending resize}
       end;
 
 next_rec:                              {done with this record, on to next}
@@ -183,9 +184,11 @@ var
   x, y: real;                          {scratch coordinate}
   tick_p: gui_tick_p_t;                {to current tick mark descriptor}
 
+label
+  leave;
+
 begin
   rend_set.enter_rend^;
-
   rend_set.rgb^ (0.0, 0.0, 0.0);
   rend_prim.clear_cwind^;
 {
@@ -292,7 +295,9 @@ otherwise                              {all other more subordinate ticks}
   rend_set.rgb^ (1.0, 1.0, 1.0);
   for ii := 1 to csv_p^.nvals do begin {loop over the dependent variables}
     draw_depvar (ii);                  {plot the data for this variable}
+    if do_resize then goto leave;
     end;                               {back for next dependent variable}
 
+leave:                                 {common exit point}
   rend_set.exit_rend^;
   end;

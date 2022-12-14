@@ -42,11 +42,6 @@ begin
   rend_set.iterp_bitmap^ (rend_iterp_grn_k, bitmap, 1);
   rend_set.iterp_bitmap^ (rend_iterp_blu_k, bitmap, 2);
 
-  rend_set.event_req_close^ (true);
-  rend_set.event_req_resize^ (true);
-  rend_set.event_req_wiped_resize^ (true);
-  rend_set.event_req_wiped_rect^ (true);
-
   rend_get.text_parms^ (tparm);
   tparm.width := 0.72;
   tparm.height := 1.0;
@@ -69,7 +64,12 @@ begin
 
   rend_set.update_mode^ (rend_updmode_buffall_k);
   szmem_p := nil;                      {init to no mem context for current size}
+  csvana_events_setup;                 {set up RENDlib events}
   rend_set.exit_rend^;
+
+  sys_event_create_bool (evdrtask);    {create event for new DO_xxx task pending}
+  do_resize := true;                   {will require adjustment to drawing size}
+  do_redraw := true;                   {will need to be drawn}
   end;
 {
 ********************************************************************************
@@ -90,6 +90,13 @@ var
 begin
   sys_thread_create (                  {start the drawing thread}
     addr(csvana_draw_thread),          {pointer to root thread routine}
+    0,                                 {argument passed to thread, not used}
+    thid,                              {returned thread ID}
+    stat);
+  sys_error_abort (stat, '', '', nil, 0);
+
+  sys_thread_create (                  {start events handling}
+    addr(csvana_events_thread),        {pointer to root thread routine}
     0,                                 {argument passed to thread, not used}
     thid,                              {returned thread ID}
     stat);
