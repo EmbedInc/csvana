@@ -52,13 +52,13 @@ var
   name_p: csvana_name_p_t;             {to dependent value name descriptor}
 
 begin
+  csvana_draw_enter;                   {start single-threaded drawing}
+
   if szmem_p <> nil then begin         {mem context exists for previous size ?}
     util_mem_context_del (szmem_p);    {delete all dyn mem for old size config}
     end;
   util_mem_context_get (               {make mem context for the size config}
     util_top_mem_context, szmem_p);
-
-  rend_set.enter_rend^;
 {
 *   Reconfigure RENDlib for drawing into the new current draw area.
 }
@@ -170,5 +170,5 @@ begin
     szmem_p^,                          {parent memory context for tick mark descriptors}
     xticks_p);                         {returned pointer to first tick mark}
 
-  rend_set.exit_rend^;
+  csvana_draw_leave;                   {end single-threaded drawing}
   end;

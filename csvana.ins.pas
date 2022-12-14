@@ -43,6 +43,12 @@ type
     rec_last_p: csvana_rec_p_t;        {to last record in list}
     end;
 
+  csvana_ind_k_t = (                   {IDs for the different data value indicators}
+    csvana_ind_none_k,                 {no data value indicator selected}
+    csvana_ind_st_k,                   {measurement interval start}
+    csvana_ind_en_k,                   {measurement interval end}
+    csvana_ind_curs_k);                {data cursor}
+
 var (csvana)
   {
   *   RENDlib configuration state.
@@ -60,6 +66,7 @@ var (csvana)
   devw, devh: real;                    {drawing device size, 2D space}
   pixw, pixh: real;                    {width and height of 1 pixel in 2D space}
   szmem_p: util_mem_context_p_t;       {mem context for this config, cleared on resize}
+  drlock: sys_sys_threadlock_t;        {single thread lock for drawing}
   evdrtask: sys_sys_event_id_t;        {drawing task pending, sig when DO_xxx set}
   do_resize: boolean;                  {need to adjust to graphics device size}
   do_redraw: boolean;                  {need to refresh drawing}
@@ -98,11 +105,18 @@ procedure csvana_do_redraw;            {cause drawing thread to redraw display}
 procedure csvana_do_resize;            {cause drawing thread to resize to display}
   val_param; extern;
 
+procedure csvana_drag_cursor (         {drag data value cursor}
+  in      key: rend_event_key_t;       {key press event to start drag}
+  in out  redraw: boolean);            {will set to TRUE if redraw required}
+  val_param; extern;
+
 procedure csvana_draw;                 {refresh the drawing area}
   val_param; extern;
 
-procedure csvana_draw_thread (         {thread to do drawing in background}
-  in      arg: sys_int_adr_t);         {arbitrary argument, unused}
+procedure csvana_draw_enter;           {enter drawing mode, single threaded}
+  val_param; extern;
+
+procedure csvana_draw_leave;           {leave drawing mode, release single thread lock}
   val_param; extern;
 
 procedure csvana_draw_resize;          {udpate to current drawing area size}
@@ -112,6 +126,10 @@ procedure csvana_draw_run;             {start drawing, spawns drawing thread}
   val_param; extern;
 
 procedure csvana_draw_setup;           {do one-time setup for drawing}
+  val_param; extern;
+
+procedure csvana_draw_thread (         {thread to do drawing in background}
+  in      arg: sys_int_adr_t);         {arbitrary argument, unused}
   val_param; extern;
 
 procedure csvana_events_setup;         {set up RENDlib events as we will use them}
@@ -124,6 +142,11 @@ procedure csvana_events_thread (       {thread to handle graphics events}
 procedure csvana_field_new (           {add new field per record to CSV data}
   in out  root: csvana_root_t;         {CSV data to add field to}
   in      name: univ string_var_arg_t); {name of the new field}
+  val_param; extern;
+
+procedure csvana_dataind (             {find which data indicator specified by X,Y}
+  in      x, y: real;                  {2D space coordinate used to pick indicator}
+  out     ind: csvana_ind_k_t);        {returned ID of indicator, NONE if no match}
   val_param; extern;
 
 procedure csvana_read_file (           {read logic analyzer CSV file, save data}
@@ -156,4 +179,14 @@ procedure csvana_root_new (            {allocate and init new root CSV file data
 function dattx (                       {make 2D X from data X value}
   in      t: double)                   {data independent variable value}
   :real;                               {returned 2D X coordinate}
+  val_param; extern;
+
+function datxt (                       {make data value X from 2D X}
+  in      x: real)                     {2D X coordinate}
+  :double;                             {corresponding data value X}
+  val_param; extern;
+
+procedure pix2d (                      {make 2D space coodinate from pixel coordinate}
+  in    px, py: sys_int_machine_t;     {2DIMI (pixel space) coordinate}
+  out   x, y: real);                   {same location in 2D space}
   val_param; extern;

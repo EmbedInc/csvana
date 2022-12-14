@@ -3,6 +3,8 @@
 module csvana_draw_setup;
 define csvana_draw_setup;
 define csvana_draw_run;
+define csvana_draw_enter;
+define csvana_draw_leave;
 %include 'csvana.ins.pas';
 {
 ********************************************************************************
@@ -67,6 +69,9 @@ begin
   csvana_events_setup;                 {set up RENDlib events}
   rend_set.exit_rend^;
 
+  sys_thread_lock_create (drlock, stat); {create mutex for drawing}
+  sys_error_abort (stat, '', '', nil, 0);
+
   sys_event_create_bool (evdrtask);    {create event for new DO_xxx task pending}
   do_resize := true;                   {will require adjustment to drawing size}
   do_redraw := true;                   {will need to be drawn}
@@ -101,4 +106,32 @@ begin
     thid,                              {returned thread ID}
     stat);
   sys_error_abort (stat, '', '', nil, 0);
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DRAW_ENTER
+*
+*   Acquire the drawing lock and enter RENDlib drawing mode.
+}
+procedure csvana_draw_enter;           {enter drawing mode, single threaded}
+  val_param;
+
+begin
+  sys_thread_lock_enter (drlock);      {acquire exclusive lock on drawing}
+  rend_set.enter_rend^;                {enter RENDlib drawing mode}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DRAW_LEAVE
+*
+*   Exit RENDlib drawing mode and release the drawing lock.
+}
+procedure csvana_draw_leave;           {leave drawing mode, release single thread lock}
+  val_param;
+
+begin
+  rend_set.exit_rend^;                 {leave RENDlib drawing mode}
+  sys_thread_lock_leave (drlock);      {release the drawing lock}
   end;

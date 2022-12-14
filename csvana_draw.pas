@@ -188,7 +188,7 @@ label
   leave;
 
 begin
-  rend_set.enter_rend^;
+  csvana_draw_enter;                   {start single-threaded drawing}
   rend_set.rgb^ (0.0, 0.0, 0.0);
   rend_prim.clear_cwind^;
 {
@@ -299,5 +299,5 @@ otherwise                              {all other more subordinate ticks}
     end;                               {back for next dependent variable}
 
 leave:                                 {common exit point}
-  rend_set.exit_rend^;
+  csvana_draw_leave;                   {end single-threaded drawing}
   end;

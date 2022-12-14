@@ -4,6 +4,9 @@ module csvana_events;
 define csvana_events_setup;
 define csvana_events_thread;
 %include 'csvana.ins.pas';
+
+const
+  key_mleft_k = 1;                     {our left mouse key ID}
 {
 ********************************************************************************
 *
@@ -19,6 +22,10 @@ begin
   rend_set.event_req_resize^ (true);
   rend_set.event_req_wiped_resize^ (true);
   rend_set.event_req_wiped_rect^ (true);
+
+  rend_set.event_req_key_on^ (         {left mouse button}
+    rend_get.key_sp^(rend_key_sp_pointer_k, 1),
+    key_mleft_k);
   end;
 {
 ********************************************************************************
@@ -39,7 +46,7 @@ var
   pend_redraw: boolean;                {redraw is pending}
 
 label
-  next_event;
+  next_event, done_event;
 
 begin
   evwait := true;                      {wait for next event}
@@ -61,9 +68,9 @@ next_event:                            {back here to get the next event}
       end
     else begin                         {get immediate event}
       rend_event_get_nowait (ev);      {get what is available now, even if none}
-      evwait := ev.ev_type = rend_ev_none_k; {no event immediately available ?}
       end
     ;
+  evwait := ev.ev_type = rend_ev_none_k; {no event immediately available ?}
   case ev.ev_type of                   {what kind of event is it ?}
 
 rend_ev_close_k,                       {drawing device got closed, RENDlib still open}
@@ -90,6 +97,16 @@ rend_ev_wiped_rect_k: begin            {rectangle of pixels got wiped out}
       sys_wait (0.050);                {time for related events to show up}
       end;
 
+rend_ev_key_k: begin                   {a user key changed state}
+      if not ev.key.down then goto done_event; {ignore key releases here}
+      case ev.key.key_p^.id_user of    {which of our keys is it ?}
+key_mleft_k: begin                     {left mouse key}
+          csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
+          end;
+        end;                           {end of our key ID cases}
+      end;
+
     end;                               {end of event type cases}
+done_event:                            {done handling the current event in EV}
   goto next_event;                     {done processing this event, back for next}
   end;
