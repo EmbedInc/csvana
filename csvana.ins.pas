@@ -12,6 +12,9 @@
 %include 'gui.ins.pas';
 %include 'builddate.ins.pas';
 
+const
+  minmeas = 0.01;                      {min meas interval as fraction of disp range}
+
 type
   csvana_name_p_t = ^csvana_name_t;
   csvana_name_t = record               {name of one field}

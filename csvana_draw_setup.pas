@@ -55,7 +55,7 @@ begin
 
   rend_get.vect_parms^ (vparm);
   vparm.poly_level := rend_space_none_k;
-  vparm.subpixel := true;
+  vparm.subpixel := false;
   rend_set.vect_parms^ (vparm);
 
   rend_get.poly_parms^ (pparm);
@@ -64,6 +64,7 @@ begin
 
   rend_get.clip_2dim_handle^ (cliph);  {create 2DIM clip window, get handle}
 
+  rend_set.min_bits_vis^ (24.0);       {try for high color resolution}
   rend_set.update_mode^ (rend_updmode_buffall_k);
   szmem_p := nil;                      {init to no mem context for current size}
   csvana_events_setup;                 {set up RENDlib events}

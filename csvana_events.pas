@@ -18,10 +18,14 @@ procedure csvana_events_setup;
   val_param;
 
 begin
-  rend_set.event_req_close^ (true);
-  rend_set.event_req_resize^ (true);
-  rend_set.event_req_wiped_resize^ (true);
-  rend_set.event_req_wiped_rect^ (true);
+{
+*   Request the events we will use.
+}
+  rend_set.event_req_close^ (true);    {device closed, user requested close}
+  rend_set.event_req_resize^ (true);   {drawing area size changed}
+  rend_set.event_req_wiped_resize^ (true); {wiped out due to resize, now drawable}
+  rend_set.event_req_wiped_rect^ (true); {rectange of pixels got wiped out}
+  rend_set.event_req_pnt^ (true);      {pointer motion}
 
   rend_set.event_req_key_on^ (         {left mouse button}
     rend_get.key_sp^(rend_key_sp_pointer_k, 1),

@@ -37,9 +37,6 @@ define csvana_datt_upd;
 procedure csvana_datt_upd;             {sanitize and update data range control state}
   val_param;
 
-const
-  minmeas = 0.01;                      {min meas interval as fraction of disp range}
-
 var
   d: double;                           {min meas interval size}
 
