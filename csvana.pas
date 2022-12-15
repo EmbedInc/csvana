@@ -6,7 +6,7 @@ define csvana;
 
 const
   max_msg_args = 2;                    {max arguments we can pass to a message}
-  n_cmdnames_k = 4;                    {number of command names in the list}
+  n_cmdnames_k = 5;                    {number of command names in the list}
   cmdname_maxchars_k = 7;              {max chars in any command name}
 
   cmdname_len_k = cmdname_maxchars_k + 1; {number of chars to reserve per cmd name}
@@ -23,6 +23,7 @@ var
     '?      ',                         {2}
     'QUIT   ',                         {3}
     'Q      ',                         {4}
+    'M      ',                         {5}
     ];
 
 var
@@ -218,6 +219,7 @@ loop_cmd:
   writeln;
   writeln ('HELP or ?      - Show this list of commands.');
   writeln ('Q or QUIT      - Exit the program');
+  writeln ('M              - Get measurement interval and cursor values');
   unlockout;                           {release lock for writing to output}
   end;
 {
@@ -229,6 +231,25 @@ loop_cmd:
   if not_eos then goto err_extra;
 
   goto leave;
+  end;
+{
+**********
+*
+*   M
+}
+5: begin
+  if not_eos then goto err_extra;
+
+  lockout;
+  string_f_fp_eng (parm, meas1, 7, opt);
+  write ('Measurement interval from ', parm.str:parm.len, ' ', opt.str:opt.len, 's to ');
+  string_f_fp_eng (parm, meas2, 7, opt);
+  write (parm.str:parm.len, ' ', opt.str:opt.len, 's, size ');
+  string_f_fp_eng (parm, meas2 - meas1, 4, opt);
+  writeln (parm.str:parm.len, ' ', opt.str:opt.len, 's');
+  string_f_fp_eng (parm, meas2, 7, opt);
+  writeln ('Cursor at ', parm.str:parm.len, ' ', opt.str:opt.len, 's');
+  unlockout;
   end;
 {
 **********
