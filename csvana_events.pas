@@ -8,6 +8,7 @@ define csvana_events_thread;
 const
   key_drag_k = 1;                      {key ID for dragging value}
   key_fit_k = 2;                       {key ID for fit display to meas interval}
+  key_showall_k = 3;                   {key ID to zoom back to show all data}
 {
 ********************************************************************************
 *
@@ -23,7 +24,6 @@ begin
 *   Request the events we will use.
 }
   rend_set.event_req_close^ (true);    {device closed, user requested close}
-  rend_set.event_req_resize^ (true);   {drawing area size changed}
   rend_set.event_req_wiped_resize^ (true); {wiped out due to resize, now drawable}
   rend_set.event_req_wiped_rect^ (true); {rectange of pixels got wiped out}
   rend_set.event_req_scroll^ (true);   {scroll wheel motion}
@@ -35,6 +35,9 @@ begin
   rend_set.event_req_key_on^ (         {Page Up button}
     rend_get.key_sp^(rend_key_sp_pageup_k, 0),
     key_fit_k);
+  rend_set.event_req_key_on^ (         {function key 1}
+    rend_get.key_sp^(rend_key_sp_func_k, 1),
+    key_showall_k);
   end;
 {
 ********************************************************************************
@@ -69,6 +72,7 @@ next_event:                            {back here to get the next event}
       if pend_resize then begin        {handle pending resize}
         pend_resize := false;
         csvana_do_resize;
+        pend_redraw := true;           {cause redraw after size adjustment}
         end;
       if pend_redraw then begin        {handle pending redraw}
         pend_redraw := false;
@@ -81,6 +85,7 @@ next_event:                            {back here to get the next event}
       end
     ;
   evwait := ev.ev_type = rend_ev_none_k; {no event immediately available ?}
+  (* rend_event_show (ev); *)
   case ev.ev_type of                   {what kind of event is it ?}
 
 rend_ev_close_k,                       {drawing device got closed, RENDlib still open}
@@ -91,14 +96,8 @@ rend_ev_close_user_k: begin            {user wants to close the drawing device}
       sys_exit;                        {end the program}
       end;
 
-rend_ev_resize_k: begin                {drawing area size changed}
-      pend_resize := true;             {indicate resize is pending}
-      sys_wait (0.050);                {time for related events to show up}
-      end;
-
 rend_ev_wiped_resize_k: begin          {pixels wiped out due to size change}
       pend_resize := true;             {indicate resize is pending}
-      pend_redraw := true;             {indicate redraw is pending}
       sys_wait (0.050);                {time for related events to show up}
       end;
 
@@ -119,7 +118,12 @@ key_fit_k: begin                       {fit display to measurement range}
           datt2 := meas2 + d;
           csvana_datt_upd;             {sanitize and update derived values}
           pend_resize := true;
-          pend_redraw := true;
+          end;
+key_showall_k: begin                   {zoom back to show all data}
+          datt1 := csv_p^.rec_p^.time;
+          datt2 := csv_p^.rec_last_p^.time;
+          csvana_datt_upd;             {sanitize and update derived values}
+          pend_resize := true;
           end;
         end;                           {end of our key ID cases}
       end;
@@ -128,7 +132,6 @@ rend_ev_scrollv_k: begin               {vertical scroll wheel motion}
       if ev.scrollv.n = 0 then goto done_event; {no net motion ?}
       csvana_zoom (ev.scrollv.n);      {update state to do the zoom}
       pend_resize := true;
-      pend_redraw := true;
       end;
 
     end;                               {end of event type cases}
