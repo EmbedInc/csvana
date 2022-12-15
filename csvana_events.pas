@@ -6,7 +6,8 @@ define csvana_events_thread;
 %include 'csvana.ins.pas';
 
 const
-  key_mleft_k = 1;                     {our left mouse key ID}
+  key_drag_k = 1;                      {key ID for dragging value}
+  key_fit_k = 2;                       {key ID for fit display to meas interval}
 {
 ********************************************************************************
 *
@@ -30,7 +31,10 @@ begin
 
   rend_set.event_req_key_on^ (         {left mouse button}
     rend_get.key_sp^(rend_key_sp_pointer_k, 1),
-    key_mleft_k);
+    key_drag_k);
+  rend_set.event_req_key_on^ (         {Page Up button}
+    rend_get.key_sp^(rend_key_sp_pageup_k, 0),
+    key_fit_k);
   end;
 {
 ********************************************************************************
@@ -49,6 +53,7 @@ var
   evwait: boolean;                     {wait on next event}
   pend_resize: boolean;                {resize is pending}
   pend_redraw: boolean;                {redraw is pending}
+  d: double;                           {scratch data value}
 
 label
   next_event, done_event;
@@ -105,8 +110,16 @@ rend_ev_wiped_rect_k: begin            {rectangle of pixels got wiped out}
 rend_ev_key_k: begin                   {a user key changed state}
       if not ev.key.down then goto done_event; {ignore key releases here}
       case ev.key.key_p^.id_user of    {which of our keys is it ?}
-key_mleft_k: begin                     {left mouse key}
+key_drag_k: begin                      {drag a data value}
           csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
+          end;
+key_fit_k: begin                       {fit display to measurement range}
+          d := (meas2 - meas1) * minmeas; {room to leave either side}
+          datt1 := meas1 - d;          {set data range to display}
+          datt2 := meas2 + d;
+          csvana_datt_upd;             {sanitize and update derived values}
+          pend_resize := true;
+          pend_redraw := true;
           end;
         end;                           {end of our key ID cases}
       end;
