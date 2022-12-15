@@ -14,6 +14,7 @@
 
 const
   minmeas = 0.01;                      {min meas interval as fraction of disp range}
+  zoomf = 1.2;                         {auto zoom in/out size change factor}
 
 type
   csvana_name_p_t = ^csvana_name_t;
@@ -177,6 +178,10 @@ procedure csvana_root_del (            {delete all data for a CSV file}
 procedure csvana_root_new (            {allocate and init new root CSV file data}
   in out  mem: util_mem_context_t;     {parent mem context, will create subordinate}
   out     root_p: csvana_root_p_t);    {to returned initialized root data structure}
+  val_param; extern;
+
+procedure csvana_zoom (                {zoom in/out}
+  in      zin: sys_int_machine_t);     {increments to zoom in, negative for zoom out}
   val_param; extern;
 
 function dattx (                       {make 2D X from data X value}

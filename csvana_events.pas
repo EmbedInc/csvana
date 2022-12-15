@@ -25,6 +25,9 @@ begin
   rend_set.event_req_resize^ (true);   {drawing area size changed}
   rend_set.event_req_wiped_resize^ (true); {wiped out due to resize, now drawable}
   rend_set.event_req_wiped_rect^ (true); {rectange of pixels got wiped out}
+(*
+  rend_set.event_req_scroll^ (true);   {scroll wheel motion}
+*)
   rend_set.event_req_pnt^ (true);      {pointer motion}
 
   rend_set.event_req_key_on^ (         {left mouse button}
@@ -108,6 +111,12 @@ key_mleft_k: begin                     {left mouse key}
           csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
           end;
         end;                           {end of our key ID cases}
+      end;
+
+rend_ev_scrollv_k: begin               {vertical scroll wheel motion}
+      if ev.scrollv.n = 0 then goto done_event; {no net motion ?}
+      csvana_zoom (ev.scrollv.n);      {update state to do the zoom}
+      pend_redraw := true;
       end;
 
     end;                               {end of event type cases}
