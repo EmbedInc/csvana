@@ -247,7 +247,7 @@ loop_cmd:
   write (parm.str:parm.len, ' ', opt.str:opt.len, 's, size ');
   string_f_fp_eng (parm, meas2 - meas1, 4, opt);
   writeln (parm.str:parm.len, ' ', opt.str:opt.len, 's');
-  string_f_fp_eng (parm, meas2, 7, opt);
+  string_f_fp_eng (parm, curs, 7, opt);
   writeln ('Cursor at ', parm.str:parm.len, ' ', opt.str:opt.len, 's');
   unlockout;
   end;
