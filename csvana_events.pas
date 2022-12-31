@@ -60,6 +60,8 @@ var
   evwait: boolean;                     {wait on next event}
   pend_resize: boolean;                {resize is pending}
   pend_redraw: boolean;                {redraw is pending}
+  px, py: sys_int_machine_t;           {pointer coordinates, 2DIMI space}
+  x, y: real;                          {scratch 2D coordinate}
   d: double;                           {scratch data value}
 
 label
@@ -69,6 +71,8 @@ begin
   evwait := true;                      {wait for next event}
   pend_resize := false;                {init to no resize pending}
   pend_redraw := false;                {init to no redraw pending}
+  px := 0;                             {init pointer coordinates}
+  py := 0;
 
 next_event:                            {back here to get the next event}
   if evwait
@@ -111,13 +115,15 @@ rend_ev_wiped_rect_k: begin            {rectangle of pixels got wiped out}
       end;
 
 rend_ev_key_k: begin                   {a user key changed state}
+      px := ev.key.x;                  {update pointer location}
+      py := ev.key.y;
       if not ev.key.down then goto done_event; {ignore key releases here}
       case ev.key.key_p^.id_user of    {which of our keys is it ?}
 key_drag_k: begin                      {drag a data value}
           csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
           end;
 key_pan_k: begin                       {pan the display horizontally}
-          csvana_pan (ev.key, pend_redraw); {pan in X}
+          csvana_pan (ev.key, pend_resize); {pan in X}
           end;
 key_fit_k: begin                       {fit display to measurement range}
           d := (meas2 - meas1) * minmeas; {room to leave either side}
@@ -135,10 +141,18 @@ key_showall_k: begin                   {zoom back to show all data}
         end;                           {end of our key ID cases}
       end;
 
+rend_ev_pnt_move_k: begin              {the pointer moved}
+      px := ev.pnt_move.x;             {update our saved pointer location}
+      py := ev.pnt_move.y;
+      end;
+
 rend_ev_scrollv_k: begin               {vertical scroll wheel motion}
       if ev.scrollv.n = 0 then goto done_event; {no net motion ?}
-      csvana_zoom (ev.scrollv.n);      {update state to do the zoom}
-      pend_resize := true;
+      pix2d (px, py, x, y);            {make pointer location in 2D space}
+      x := max(datlx, min(datrx, x));  {clip to displayed data range}
+      d := datxt (x);                  {make data value to zoom about}
+      csvana_zoom (ev.scrollv.n, d);   {do the zoom}
+      pend_resize := true;             {need to re-adjust to drawing area size}
       end;
 
     end;                               {end of event type cases}

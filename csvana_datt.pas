@@ -59,15 +59,16 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_ZOOM (ZIN)
+*   Subroutine CSVANA_ZOOM (ZIN, ZX)
 *
 *   Zoom in ZIN standard increments.  ZIN can be negative to cause zooming out.
 *
-*   The draw area is scaled around the data cursor.  Only the display mapping
+*   The draw area is scaled about the data value ZX.  Only the display mapping
 *   state is updated.  The display is not redrawn.
 }
 procedure csvana_zoom (                {zoom in/out}
-  in      zin: sys_int_machine_t);     {increments to zoom in, negative for zoom out}
+  in      zin: sys_int_machine_t;      {increments to zoom in, negative for zoom out}
+  in      zx: double);                 {X data value to zoom about}
   val_param;
 
 var
@@ -78,7 +79,7 @@ begin
 
   zf := zoomf ** (-zin);               {make zoom scale factor}
 
-  datt1 := (datt1 - curs) * zf + curs; {zoom about the cursor}
-  datt2 := (datt2 - curs) * zf + curs;
+  datt1 := (datt1 - zx) * zf + zx;     {zoom about the zxor}
+  datt2 := (datt2 - zx) * zf + zx;
   csvana_datt_upd;                     {sanitize the result}
   end;

@@ -74,4 +74,4 @@ Interactive controls
 
   Scroll wheel rotation
 
-    Zooms in or out about the data cursor (blue).
+    Zooms in or out about the current point.

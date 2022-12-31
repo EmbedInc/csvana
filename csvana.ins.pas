@@ -186,7 +186,8 @@ procedure csvana_root_new (            {allocate and init new root CSV file data
   val_param; extern;
 
 procedure csvana_zoom (                {zoom in/out}
-  in      zin: sys_int_machine_t);     {increments to zoom in, negative for zoom out}
+  in      zin: sys_int_machine_t;      {increments to zoom in, negative for zoom out}
+  in      zx: double);                 {X data value to zoom about}
   val_param; extern;
 
 function dattx (                       {make 2D X from data X value}
