@@ -52,15 +52,23 @@ Cursors
 
 Interactive controls
 
-  F1 key
+  Page Up
 
-    Resets the display to show all the data.
+   Zooms in one increment about the data cursor.
 
-  Page Up key
+  Shift - Page Up
 
     Zooms the display to the measurement interval, with a small margin on
     either side.  The measurement interval is from the green cursor to the
     red cursor.
+
+  Page Down
+
+    Zooms out one increment about the data cursor.
+
+  Shift - Page Down
+
+    Zooms out to show the entire data range.
 
   Left mouse button
 

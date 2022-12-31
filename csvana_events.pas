@@ -7,8 +7,8 @@ define csvana_events_thread;
 
 const
   key_drag_k = 1;                      {key ID for dragging a cursor}
-  key_fit_k = 2;                       {key ID for fit display to meas interval}
-  key_showall_k = 3;                   {key ID to zoom back to show all data}
+  key_zoomin_k = 2;                    {key ID for zoom in}
+  key_zoomout_k = 3;                   {key ID for zoom out}
   key_pan_k = 4;                       {key ID to pan data along X axis}
 {
 ********************************************************************************
@@ -38,10 +38,10 @@ begin
     key_pan_k);
   rend_set.event_req_key_on^ (         {Page Up button}
     rend_get.key_sp^(rend_key_sp_pageup_k, 0),
-    key_fit_k);
-  rend_set.event_req_key_on^ (         {function key 1}
-    rend_get.key_sp^(rend_key_sp_func_k, 1),
-    key_showall_k);
+    key_zoomin_k);
+  rend_set.event_req_key_on^ (         {Page Down button}
+    rend_get.key_sp^(rend_key_sp_pagedn_k, 0),
+    key_zoomout_k);
   end;
 {
 ********************************************************************************
@@ -125,18 +125,28 @@ key_drag_k: begin                      {drag a data value}
 key_pan_k: begin                       {pan the display horizontally}
           csvana_pan (ev.key, pend_resize); {pan in X}
           end;
-key_fit_k: begin                       {fit display to measurement range}
-          d := (meas2 - meas1) * minmeas; {room to leave either side}
-          datt1 := meas1 - d;          {set data range to display}
-          datt2 := meas2 + d;
-          csvana_datt_upd;             {sanitize and update derived values}
-          pend_resize := true;
+key_zoomin_k: begin                    {zoom in}
+          if rend_key_mod_shift_k in ev.key.modk then begin {zoom in to meas range ?}
+            d := (meas2 - meas1) * minmeas; {room to leave either side}
+            datt1 := meas1 - d;        {set data range to display}
+            datt2 := meas2 + d;
+            csvana_datt_upd;           {sanitize and update derived values}
+            pend_resize := true;
+            goto done_event;
+            end;
+          csvana_zoom (1, curs);       {zoom in about the data cursor}
+          pend_resize := true;         {need to re-adjust to drawing area size}
           end;
-key_showall_k: begin                   {zoom back to show all data}
-          datt1 := csv_p^.rec_p^.time;
-          datt2 := csv_p^.rec_last_p^.time;
-          csvana_datt_upd;             {sanitize and update derived values}
-          pend_resize := true;
+key_zoomout_k: begin                   {zoom out}
+          if rend_key_mod_shift_k in ev.key.modk then begin {zoom out to all data ?}
+            datt1 := csv_p^.rec_p^.time;
+            datt2 := csv_p^.rec_last_p^.time;
+            csvana_datt_upd;           {sanitize and update derived values}
+            pend_resize := true;
+            goto done_event;
+            end;
+          csvana_zoom (-1, curs);      {zoom out about the data cursor}
+          pend_resize := true;         {need to re-adjust to drawing area size}
           end;
         end;                           {end of our key ID cases}
       end;
