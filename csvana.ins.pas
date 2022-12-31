@@ -100,6 +100,11 @@ var (csvana)
 {
 *   Globally visible subroutines and functions.
 }
+procedure csvana_dataind (             {find which data indicator specified by X,Y}
+  in      x, y: real;                  {2D space coordinate used to pick indicator}
+  out     ind: csvana_ind_k_t);        {returned ID of indicator, NONE if no match}
+  val_param; extern;
+
 procedure csvana_datt_upd;             {sanitize and update data range control state}
   val_param; extern;
 
@@ -148,9 +153,9 @@ procedure csvana_field_new (           {add new field per record to CSV data}
   in      name: univ string_var_arg_t); {name of the new field}
   val_param; extern;
 
-procedure csvana_dataind (             {find which data indicator specified by X,Y}
-  in      x, y: real;                  {2D space coordinate used to pick indicator}
-  out     ind: csvana_ind_k_t);        {returned ID of indicator, NONE if no match}
+procedure csvana_pan (                 {pan the display along the X axis}
+  in      key: rend_event_key_t;       {key press event to start drag}
+  in out  redraw: boolean);            {will set to TRUE if redraw required}
   val_param; extern;
 
 procedure csvana_read_file (           {read logic analyzer CSV file, save data}

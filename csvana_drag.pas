@@ -49,8 +49,8 @@ begin
 *   Subroutine CSVANA_DRAG_CURSOR (KEY, REDRAW)
 *
 *   Drag one of the data cursors and update their value to the new position.
-*   KEY is the key event that started the drag operation.  This is guaranteed
-*   to be a key down event.  If the display should be redrawn as a result of the
+*   KEY is the key event that started the drag operation.  This is guaranteed to
+*   be a key down event.  If the display should be redrawn as a result of the
 *   drag operation, then REDRAW is set to TRUE.  Otherwise, REDRAW is unaltered.
 }
 procedure csvana_drag_cursor (         {drag data value cursor}

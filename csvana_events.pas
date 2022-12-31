@@ -6,9 +6,10 @@ define csvana_events_thread;
 %include 'csvana.ins.pas';
 
 const
-  key_drag_k = 1;                      {key ID for dragging value}
+  key_drag_k = 1;                      {key ID for dragging a cursor}
   key_fit_k = 2;                       {key ID for fit display to meas interval}
   key_showall_k = 3;                   {key ID to zoom back to show all data}
+  key_pan_k = 4;                       {key ID to pan data along X axis}
 {
 ********************************************************************************
 *
@@ -32,6 +33,9 @@ begin
   rend_set.event_req_key_on^ (         {left mouse button}
     rend_get.key_sp^(rend_key_sp_pointer_k, 1),
     key_drag_k);
+  rend_set.event_req_key_on^ (         {center mouse button}
+    rend_get.key_sp^(rend_key_sp_pointer_k, 2),
+    key_pan_k);
   rend_set.event_req_key_on^ (         {Page Up button}
     rend_get.key_sp^(rend_key_sp_pageup_k, 0),
     key_fit_k);
@@ -111,6 +115,9 @@ rend_ev_key_k: begin                   {a user key changed state}
       case ev.key.key_p^.id_user of    {which of our keys is it ?}
 key_drag_k: begin                      {drag a data value}
           csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
+          end;
+key_pan_k: begin                       {pan the display horizontally}
+          csvana_pan (ev.key, pend_redraw); {pan in X}
           end;
 key_fit_k: begin                       {fit display to measurement range}
           d := (meas2 - meas1) * minmeas; {room to leave either side}

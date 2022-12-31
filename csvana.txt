@@ -1,5 +1,5 @@
                               Program CSVANA
-                             3 December 2022
+                             31 December 2022
 
 csvana [options]
 
@@ -30,3 +30,48 @@ The command line options are:
     Sets the relative starting (-ST) and ending (-EN) data time to
     display.  The time is in seconds from the start of the first data
     record.
+
+
+Cursors
+
+  Three vertical lines are drawn behind the data traces, one each in red,
+  green, and blue.  Each cursor is guaranteed to always be within the
+  displayed data range.  The cursor positions are moved, if necessary, as
+  a result of pan and zoom operations to keep them on the current display.
+
+  The range from the green cursor to the red cursor is the measurement
+  interval.  The location and size of this interval can be obtained via
+  interactive commands.  The green cursor (start of measurement interval)
+  is always maintained left of the red cursor (end of measurement
+  interval).
+
+  The blue cursor is referred to as the "data cursor".  It's position can
+  be obtained via interactive commands.  Some zoom operations magnify or
+  collapse the display around the data cursor.
+
+
+Interactive controls
+
+  F1 key
+
+    Resets the display to show all the data.
+
+  Page Up key
+
+    Zooms the display to the measurement interval, with a small margin on
+    either side.  The measurement interval is from the green cursor to the
+    red cursor.
+
+  Left mouse button
+
+    Drags one of the cursors if clicked on the triangle at the bottom of
+    that cursor.  If clicked in the data area, it drags the data cursor
+    (blue).
+
+  Middle mouse button
+
+    Pans the displayed section of data by dragging the X axis.
+
+  Scroll wheel rotation
+
+    Zooms in or out about the data cursor (blue).
