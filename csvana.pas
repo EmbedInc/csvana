@@ -6,7 +6,7 @@ define csvana;
 
 const
   max_msg_args = 2;                    {max arguments we can pass to a message}
-  n_cmdnames_k = 5;                    {number of command names in the list}
+  n_cmdnames_k = 9;                    {number of command names in the list}
   cmdname_maxchars_k = 7;              {max chars in any command name}
 
   cmdname_len_k = cmdname_maxchars_k + 1; {number of chars to reserve per cmd name}
@@ -24,6 +24,10 @@ var
     'QUIT   ',                         {3}
     'Q      ',                         {4}
     'M      ',                         {5}
+    'ON     ',                         {6}
+    'OFF    ',                         {7}
+    'R      ',                         {8}
+    'DR     ',                         {9}
     ];
 
 var
@@ -57,6 +61,7 @@ label
 begin
   devname.max := size_char(devname.str); {init RENDlib device name}
   devname.len := 0;
+  db25_p := nil;                       {init to not connected to DB-25 board}
 {
 *   Initialize before reading the command line.
 }
@@ -218,8 +223,12 @@ loop_cmd:
   lockout;                             {acquire lock for writing to output}
   writeln;
   writeln ('HELP or ?      - Show this list of commands.');
-  writeln ('Q or QUIT      - Exit the program');
   writeln ('M              - Get measurement interval and cursor values');
+  writeln ('ON, OFF        - Dongle on or off');
+  writeln ('R              - Read DB-25 pins');
+  writeln ('DR             - Find which DB-25 pins driven by dongle');
+
+  writeln ('Q or QUIT      - Exit the program');
   unlockout;                           {release lock for writing to output}
   end;
 {
@@ -249,6 +258,64 @@ loop_cmd:
   writeln (parm.str:parm.len, ' ', opt.str:opt.len, 's');
   string_f_fp_eng (parm, curs, 7, opt);
   writeln ('Cursor at ', parm.str:parm.len, ' ', opt.str:opt.len, 's');
+  unlockout;
+  end;
+{
+**********
+*
+*   ON
+*
+*   Configure DB-25 pins for normal communication with the dongle.
+}
+6: begin
+  if not_eos then goto err_extra;
+
+  dong_conn;                           {make sure connection is open}
+  dong_on;                             {dongle on}
+  end;
+{
+**********
+*
+*   OFF
+*
+*   Configure DB-25 pins to turn off the dongle.  All pins will be digital I/O
+*   driven low.
+}
+7: begin
+  if not_eos then goto err_extra;
+
+  dong_conn;                           {make sure connection is open}
+  dong_off;                            {dongle off}
+  end;
+{
+**********
+*
+*   R
+*
+*   Read pins, show drive and data state.
+}
+8: begin
+  if not_eos then goto err_extra;
+
+  dong_conn;                           {make sure connection is open}
+  lockout;
+  dong_show_pins;                      {show state of each pin}
+  unlockout;
+  end;
+{
+**********
+*
+*   DR
+*
+*   Find what pins are being driven by the dongle.  Digital I/O pins will be
+*   toggled.
+}
+9: begin
+  if not_eos then goto err_extra;
+
+  dong_conn;                           {make sure connection is open}
+  lockout;
+  dong_show_driven;                    {test I/O pins, show which driven by dongle}
   unlockout;
   end;
 {

@@ -10,6 +10,7 @@
 %include 'img.ins.pas';
 %include 'rend.ins.pas';
 %include 'gui.ins.pas';
+%include 'db25.ins.pas';
 %include 'builddate.ins.pas';
 
 const
@@ -96,6 +97,10 @@ var (csvana)
   datdt: double;                       {data time interval size}
   meas1, meas2: double;                {start/end measuring interval data values}
   curs: double;                        {cursor data value}
+  {
+  *   State for interacting with the DB-25 board and a dongle.
+  }
+  db25_p: db25_p_t;                    {to DB25 library use state}
 
 {
 *   Globally visible subroutines and functions.
@@ -198,6 +203,21 @@ function dattx (                       {make 2D X from data X value}
 function datxt (                       {make data value X from 2D X}
   in      x: real)                     {2D X coordinate}
   :double;                             {corresponding data value X}
+  val_param; extern;
+
+procedure dong_conn;                   {make sure conn open, dongle on}
+  val_param; extern;
+
+procedure dong_off;                    {turn off dongle, no power}
+  val_param; extern;
+
+procedure dong_on;                     {set up DB-25 for normal dongle operations}
+  val_param; extern;
+
+procedure dong_show_driven;            {test pins, show which driven by dongle}
+  val_param; extern;
+
+procedure dong_show_pins;              {show pin states}
   val_param; extern;
 
 procedure pix2d (                      {make 2D space coodinate from pixel coordinate}

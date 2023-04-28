@@ -14,6 +14,7 @@ call src_getfrom vect vect.ins.pas
 call src_getfrom img img.ins.pas
 call src_getfrom rend/core rend.ins.pas
 call src_getfrom gui gui.ins.pas
+call src_getfrom thel/db25lib db25.ins.pas
 
 make_debug debug_switches.ins.pas
 call src_builddate "%srcdir%"
