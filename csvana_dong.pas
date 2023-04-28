@@ -2,6 +2,7 @@
 }
 module csvana_dong;
 define dong_conn;
+define dong_close;
 define dong_on;
 define dong_off;
 define dong_show_pins;
@@ -52,7 +53,7 @@ db25_pindr_gnd_k, db25_pindr_pwr_k: begin {fixed ground or power}
 *   already open, then it is opened and the DB-25 pins set up for normal dongle
 *   operations.  After this call, DB25_P is guaranteed to be a valid pointer.
 }
-procedure dong_conn;                   {make sure conn open, dongle on}
+procedure dong_conn;                   {make sure conn open, init to ON if closed}
   val_param;
 
 var
@@ -68,6 +69,26 @@ begin
   sys_error_abort (stat, '', '', nil, 0);
 
   dong_on;                             {set up pins for communication with dongle}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine DONG_CLOSE
+*
+*   Make sure the connection to the dongle is closed and associated resources
+*   deallocated.  Nothing is done if the connection to the dongle is not open.
+}
+procedure dong_close;                  {close connection to dongle, if open}
+  val_param;
+
+var
+  stat: sys_err_t;                     {completion status}
+
+begin
+  if db25_p = nil then return;         {connection not open, nothing to do ?}
+
+  db25_lib_end (db25_p, stat);         {close the connection, deallocate resources}
+  sys_error_abort (stat, '', '', nil, 0);
   end;
 {
 ********************************************************************************

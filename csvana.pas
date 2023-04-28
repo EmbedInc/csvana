@@ -357,4 +357,5 @@ err_cmparm:                            {parameter error, STAT set accordingly}
   goto loop_cmd;
 
 leave:
+  dong_close;                          {close connection to the dongle, if open}
   end.

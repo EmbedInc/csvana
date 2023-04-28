@@ -205,7 +205,10 @@ function datxt (                       {make data value X from 2D X}
   :double;                             {corresponding data value X}
   val_param; extern;
 
-procedure dong_conn;                   {make sure conn open, dongle on}
+procedure dong_close;                  {close connection to dongle, if open}
+  val_param; extern;
+
+procedure dong_conn;                   {make sure conn open, init to ON if closed}
   val_param; extern;
 
 procedure dong_off;                    {turn off dongle, no power}
