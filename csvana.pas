@@ -62,6 +62,7 @@ begin
   devname.max := size_char(devname.str); {init RENDlib device name}
   devname.len := 0;
   db25_p := nil;                       {init to not connected to DB-25 board}
+  dongrec_p := nil;                    {init to no current dongle data record}
 {
 *   Initialize before reading the command line.
 }

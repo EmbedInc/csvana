@@ -7,6 +7,9 @@ define dong_on;
 define dong_off;
 define dong_show_pins;
 define dong_show_driven;
+define dong_rec_set;
+define dong_rec_curs;
+define dong_rec_next;
 %include csvana.ins.pas;
 
 const
@@ -218,4 +221,96 @@ begin
 
   db25_show_hdrdat (db25_p^);          {write header, drive state, digital values}
   db25_show_exdriven (pins, pins_io);  {show which pins are externally driven}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine DONG_REC_SET (REC)
+*
+*   Drive the pins according to the data record REC.  A pointer to the record is
+*   saved in DONGREC_P to record which record is being driven onto the pins.
+}
+procedure dong_rec_set (               {set pins according to data record}
+  in var  rec: csvana_rec_t);          {data record to drive on pins}
+  val_param;
+
+var
+  name_p: csvana_name_p_t;             {points to current dependent variable name}
+  vn: sys_int_machine_t;               {1-N number of current dependent variable}
+  pin: sys_int_machine_t;              {pin number for this dependent variable}
+  mask: db25_pinmask_t;                {mask for the current pin}
+  pins: db25_pinmask_t;                {new pins state from this record}
+  stat: sys_err_t;                     {completion status}
+
+label
+  next_dp;
+
+begin
+  dongrec_p := addr(rec);              {save what record dongle being driven with}
+
+  pins := 0;                           {init all logic levels to low}
+  vn := 1;                             {init number of current dependent variable}
+  name_p := csv_p^.name_p;             {point to name of first field}
+
+  while name_p <> nil do begin         {scan the list of dependent variables}
+    string_t_int (name_p^.name, pin, stat); {get pin number from name}
+    sys_error_abort (stat, '', '', nil, 0);
+    mask := db25_pin_mask (pin);       {make mask for this pin}
+    if rec.data[vn] <> 0 then begin    {this variable not set to 0 ?}
+      pins := pins ! mask;             {set this pin to logic high}
+      end;
+next_dp:                               {done with this dependent var, on to next}
+    name_p := name_p^.next_p;          {to name of next variable}
+    vn := vn + 1;                      {update 1-N number of this variable}
+    end;                               {back to process this new variable}
+
+  db25_pins_set (db25_p^, pins, stat); {set pins to their new states}
+  sys_error_abort (stat, '', '', nil, 0);
+  end;
+{
+********************************************************************************
+*
+*   Subroutine DONG_REC_CURS
+*
+*   Set the current dongle data record to that indicated by the data cursor.
+*   The pins will be driven according to the data in that record.
+}
+procedure dong_rec_curs;               {set data record to cursor pos, drive pins}
+  val_param;
+
+var
+  rec_p: csvana_rec_p_t;               {pointer to current data record}
+
+begin
+  rec_p := csv_p^.rec_p;               {init to first record in data set}
+  while rec_p <> nil do begin          {scan the records sequentially}
+    if                                 {this is the record indicated by cursor ?}
+        (rec_p^.next_p = nil) or else  {there is no subsequent record ?}
+        (curs < rec_p^.next_p^.time)   {cursor is before the next record ?}
+        then begin
+      dong_rec_set (rec_p^);           {set dongle to this data record}
+      return;
+      end;
+    rec_p := rec_p^.next_p;            {advance to next record in data set}
+    end;                               {back to check this new record}
+
+  dongrec_p := nil;                    {cursor is not at a data record}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine DONG_REC_NEXT
+*
+*   Advance to the next data record and drive the pins accordingly.  Nothing is
+*   done if there is no current dongle data record, or there is not subsequent
+*   data record.
+}
+procedure dong_rec_next;               {to next data record, drive pins accordingly}
+  val_param;
+
+begin
+  if dongrec_p = nil then return;      {no current dongle record ?}
+  if dongrec_p^.next_p = nil then return; {no subsequent record ?}
+
+  dong_rec_set (dongrec_p^.next_p^);   {set dongle state to the next record}
   end;

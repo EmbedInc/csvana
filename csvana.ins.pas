@@ -101,7 +101,7 @@ var (csvana)
   *   State for interacting with the DB-25 board and a dongle.
   }
   db25_p: db25_p_t;                    {to DB25 library use state}
-
+  dongrec_p: csvana_rec_p_t;           {to current output state, may be NIL}
 {
 *   Globally visible subroutines and functions.
 }
@@ -215,6 +215,16 @@ procedure dong_off;                    {turn off dongle, no power}
   val_param; extern;
 
 procedure dong_on;                     {set up DB-25 for normal dongle operations}
+  val_param; extern;
+
+procedure dong_rec_curs;               {set data record to cursor pos, drive pins}
+  val_param; extern;
+
+procedure dong_rec_next;               {to next data record, drive pins accordingly}
+  val_param; extern;
+
+procedure dong_rec_set (               {set pins according to data record}
+  in var  rec: csvana_rec_t);          {data record to drive on pins}
   val_param; extern;
 
 procedure dong_show_driven;            {test pins, show which driven by dongle}

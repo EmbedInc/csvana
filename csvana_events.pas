@@ -10,6 +10,8 @@ const
   key_zoomin_k = 2;                    {key ID for zoom in}
   key_zoomout_k = 3;                   {key ID for zoom out}
   key_pan_k = 4;                       {key ID to pan data along X axis}
+  key_cursdong_k = 5;                  {set dongle record from cursor position}
+  key_dongnext_k = 6;                  {drive dongle with next sequential record}
 {
 ********************************************************************************
 *
@@ -42,6 +44,12 @@ begin
   rend_set.event_req_key_on^ (         {Page Down button}
     rend_get.key_sp^(rend_key_sp_pagedn_k, 0),
     key_zoomout_k);
+  rend_set.event_req_key_on^ (         {dongle data record from cursor position}
+    rend_get.key_sp^(rend_key_sp_arrow_down_k, 0),
+    key_cursdong_k);
+  rend_set.event_req_key_on^ (         {dongle data record to next sequential rec}
+    rend_get.key_sp^(rend_key_sp_arrow_right_k, 0),
+    key_dongnext_k);
   end;
 {
 ********************************************************************************
@@ -148,6 +156,18 @@ key_zoomout_k: begin                   {zoom out}
           csvana_zoom (-1, curs);      {zoom out about the data cursor}
           pend_resize := true;         {need to re-adjust to drawing area size}
           end;
+key_cursdong_k: begin                  {set dongle data record from cursor}
+          dong_conn;                   {make sure connected to the dongle}
+          dong_rec_curs;               {set dongle record from cursor position}
+          pend_redraw := true;
+          end;
+key_dongnext_k: begin                  {dongle drive to next data record}
+          if dongrec_p <> nil then begin
+            dong_rec_next;             {to next record}
+            pend_redraw := true;
+            end;
+          end;
+
         end;                           {end of our key ID cases}
       end;
 

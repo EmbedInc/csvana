@@ -1,5 +1,5 @@
                               Program CSVANA
-                             31 December 2022
+                              28 April 2023
 
 csvana [options]
 
@@ -83,3 +83,12 @@ Interactive controls
   Scroll wheel rotation
 
     Zooms in or out about the current point.
+
+  Down arrow
+
+    Drive the dongle with the data record the cursor is at.
+
+  Right arrow
+
+    Move to the next sequential data record to drive the dongle to.
+    Nothing is done if there is not current dongle data record.
