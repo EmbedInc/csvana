@@ -3,6 +3,7 @@
 module csvana_datt;
 define csvana_datt_upd;
 define csvana_zoom;
+define csvana_datt_rec;
 %include 'csvana.ins.pas';
 {
 ********************************************************************************
@@ -82,4 +83,39 @@ begin
   datt1 := (datt1 - zx) * zf + zx;     {zoom about the zxor}
   datt2 := (datt2 - zx) * zf + zx;
   csvana_datt_upd;                     {sanitize the result}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DATT_REC (DATT)
+*
+*   Find the data record that contains the data time DATT.  The function returns
+*   the pointer to the record, or NIL when DATT is outside the time range of all
+*   records.
+}
+function csvana_datt_rec (             {find data record that covers a particular time}
+  in      datt: double)                {data time to find corresponding record for}
+  :csvana_rec_p_t;                     {pointer to record, NIL when no rec contains DATT}
+  val_param;
+
+var
+  rec_p: csvana_rec_p_t;               {pointer to current data record}
+
+begin
+  csvana_datt_rec := nil;              {init to no data record contains time DATT}
+
+  rec_p := csv_p^.rec_p;               {init to first record in data set}
+  if rec_p = nil then return;          {no data records at all ?}
+  if datt < rec_p^.time then return;   {requested time is before all data records ?}
+
+  repeat                               {scan the records sequentially}
+    if                                 {this is the record indicated by DATT ?}
+        (rec_p^.next_p = nil) or else  {there is no subsequent record ?}
+        (datt < rec_p^.next_p^.time)   {DATT is before the next record ?}
+        then begin
+      csvana_datt_rec := rec_p;        {return pointer to this record}
+      return;
+      end;
+    rec_p := rec_p^.next_p;            {advance to next record in data set}
+    until rec_p = nil;                 {keep scanning records until end of list}
   end;

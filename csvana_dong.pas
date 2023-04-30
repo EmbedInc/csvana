@@ -225,13 +225,13 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine DONG_REC_SET (REC)
+*   Subroutine DONG_REC_SET (REC_P)
 *
-*   Drive the pins according to the data record REC.  A pointer to the record is
-*   saved in DONGREC_P to record which record is being driven onto the pins.
+*   Drive the pins according to the data record REC_P.  A pointer to the record
+*   is saved in DONGREC_P to record which record is being driven onto the pins.
 }
 procedure dong_rec_set (               {set pins according to data record}
-  in var  rec: csvana_rec_t);          {data record to drive on pins}
+  in      rec_p: csvana_rec_p_t);      {pointer to data record, NIL for none}
   val_param;
 
 var
@@ -246,7 +246,8 @@ label
   next_dp;
 
 begin
-  dongrec_p := addr(rec);              {save what record dongle being driven with}
+  dongrec_p := rec_p;                  {save what record dongle being driven with}
+  if rec_p = nil then return;          {no record, nothing more to do ?}
 
   pins := 0;                           {init all logic levels to low}
   vn := 1;                             {init number of current dependent variable}
@@ -256,7 +257,7 @@ begin
     string_t_int (name_p^.name, pin, stat); {get pin number from name}
     sys_error_abort (stat, '', '', nil, 0);
     mask := db25_pin_mask (pin);       {make mask for this pin}
-    if rec.data[vn] <> 0 then begin    {this variable not set to 0 ?}
+    if rec_p^.data[vn] <> 0 then begin {this variable not set to 0 ?}
       pins := pins ! mask;             {set this pin to logic high}
       end;
 next_dp:                               {done with this dependent var, on to next}
@@ -278,23 +279,8 @@ next_dp:                               {done with this dependent var, on to next
 procedure dong_rec_curs;               {set data record to cursor pos, drive pins}
   val_param;
 
-var
-  rec_p: csvana_rec_p_t;               {pointer to current data record}
-
 begin
-  rec_p := csv_p^.rec_p;               {init to first record in data set}
-  while rec_p <> nil do begin          {scan the records sequentially}
-    if                                 {this is the record indicated by cursor ?}
-        (rec_p^.next_p = nil) or else  {there is no subsequent record ?}
-        (curs < rec_p^.next_p^.time)   {cursor is before the next record ?}
-        then begin
-      dong_rec_set (rec_p^);           {set dongle to this data record}
-      return;
-      end;
-    rec_p := rec_p^.next_p;            {advance to next record in data set}
-    end;                               {back to check this new record}
-
-  dongrec_p := nil;                    {cursor is not at a data record}
+  dong_rec_set ( csvana_datt_rec(curs) ); {set dongle record to indicated by cursor}
   end;
 {
 ********************************************************************************
@@ -310,7 +296,5 @@ procedure dong_rec_next;               {to next data record, drive pins accordin
 
 begin
   if dongrec_p = nil then return;      {no current dongle record ?}
-  if dongrec_p^.next_p = nil then return; {no subsequent record ?}
-
-  dong_rec_set (dongrec_p^.next_p^);   {set dongle state to the next record}
+  dong_rec_set (dongrec_p^.next_p);    {set dongle state to the next record}
   end;

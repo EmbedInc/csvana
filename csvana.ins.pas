@@ -110,6 +110,11 @@ procedure csvana_dataind (             {find which data indicator specified by X
   out     ind: csvana_ind_k_t);        {returned ID of indicator, NONE if no match}
   val_param; extern;
 
+function csvana_datt_rec (             {find data record that covers a particular time}
+  in      datt: double)                {data time to find corresponding record for}
+  :csvana_rec_p_t;                     {pointer to record, NIL when no rec contains DATT}
+  val_param; extern;
+
 procedure csvana_datt_upd;             {sanitize and update data range control state}
   val_param; extern;
 
@@ -224,7 +229,7 @@ procedure dong_rec_next;               {to next data record, drive pins accordin
   val_param; extern;
 
 procedure dong_rec_set (               {set pins according to data record}
-  in var  rec: csvana_rec_t);          {data record to drive on pins}
+  in      rec_p: csvana_rec_p_t);      {pointer to data record, NIL for none}
   val_param; extern;
 
 procedure dong_show_driven;            {test pins, show which driven by dongle}

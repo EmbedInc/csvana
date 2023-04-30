@@ -12,6 +12,7 @@ const
   key_pan_k = 4;                       {key ID to pan data along X axis}
   key_cursdong_k = 5;                  {set dongle record from cursor position}
   key_dongnext_k = 6;                  {drive dongle with next sequential record}
+  key_runto_k = 7;                     {drive dongle from curr position to cursor}
 {
 ********************************************************************************
 *
@@ -50,6 +51,9 @@ begin
   rend_set.event_req_key_on^ (         {dongle data record to next sequential rec}
     rend_get.key_sp^(rend_key_sp_arrow_right_k, 0),
     key_dongnext_k);
+  rend_set.event_req_key_on^ (         {drive dongle from curr pos to cursor}
+    rend_get.key_sp^(rend_key_sp_arrow_up_k, 0),
+    key_runto_k);
   end;
 {
 ********************************************************************************
@@ -71,6 +75,7 @@ var
   px, py: sys_int_machine_t;           {pointer coordinates, 2DIMI space}
   x, y: real;                          {scratch 2D coordinate}
   d: double;                           {scratch data value}
+  rec_p: csvana_rec_p_t;               {scratch pointer to data record}
 
 label
   next_event, done_event;
@@ -162,10 +167,23 @@ key_cursdong_k: begin                  {set dongle data record from cursor}
           pend_redraw := true;
           end;
 key_dongnext_k: begin                  {dongle drive to next data record}
-          if dongrec_p <> nil then begin
-            dong_rec_next;             {to next record}
+          if dongrec_p = nil           {no current record to start from ?}
+            then goto done_event;
+          dong_rec_next;               {to next record}
+          pend_redraw := true;
+          end;
+key_runto_k: begin                     {run dongle from curr position to cursor}
+          if dongrec_p = nil           {no current record to start from ?}
+            then goto done_event;
+          rec_p := csvana_datt_rec(curs); {get pointer to record at cursor}
+          if rec_p = nil               {no target record to end on ?}
+            then goto done_event;
+          if rec_p^.time < dongrec_p^.time {cursor is before curr dongle record ?}
+            then goto done_event;
+          while dongrec_p <> rec_p do begin {advance until reach target record}
+            dong_rec_next;             {to next record, drive dongle accordingly}
             pend_redraw := true;
-            end;
+            end;                       {back to go to next record}
           end;
 
         end;                           {end of our key ID cases}

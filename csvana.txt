@@ -1,5 +1,5 @@
                               Program CSVANA
-                              28 April 2023
+                              30 April 2023
 
 csvana [options]
 
@@ -92,3 +92,9 @@ Interactive controls
 
     Move to the next sequential data record to drive the dongle to.
     Nothing is done if there is not current dongle data record.
+
+  Up arrow
+
+    Drive the dongle sequentially from the current dongle record to the
+    data cursor.  Nothing is done if there is no current dongle data
+    record, or it after the data cursor.
