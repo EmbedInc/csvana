@@ -162,6 +162,13 @@ key_zoomout_k: begin                   {zoom out}
           pend_resize := true;         {need to re-adjust to drawing area size}
           end;
 key_cursdong_k: begin                  {set dongle data record from cursor}
+          if rend_key_mod_shift_k in ev.key.modk then begin {go to first data record ?}
+            if csv_p = nil then goto done_event; {no data records at all ?}
+            dong_conn;                 {make sure connected to the dongle}
+            dong_rec_set (csv_p^.rec_p); {drive dongle from first data record}
+            pend_redraw := true;
+            goto done_event;
+            end;
           dong_conn;                   {make sure connected to the dongle}
           dong_rec_curs;               {set dongle record from cursor position}
           pend_redraw := true;
