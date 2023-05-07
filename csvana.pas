@@ -230,6 +230,15 @@ loop_cmd:
   writeln ('DR             - Find which DB-25 pins driven by dongle');
 
   writeln ('Q or QUIT      - Exit the program');
+
+  writeln;
+  writeln ('Pgup: zoom in, Shft-Pgup: zoom to meas interval');
+  writeln ('Pgdn: zoom out, Shft-Pgdn: zoom out to all data');
+  writeln ('Lft-butt click: set data cursor, Lft-butt drag: move cursors');
+  writeln ('Mid-butt: pan, Scroll: zoom in/out');
+  writeln ('Down-arr: dongle to cursor, Shft-down-arr: dongle to first rec');
+  writeln ('Rit-arr: dongle to next rec, Up-arr: run to data cursor');
+
   unlockout;                           {release lock for writing to output}
   end;
 {

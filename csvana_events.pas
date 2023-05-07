@@ -76,6 +76,7 @@ var
   x, y: real;                          {scratch 2D coordinate}
   d: double;                           {scratch data value}
   rec_p: csvana_rec_p_t;               {scratch pointer to data record}
+  mask: db25_pinmask_t;                {scratch pins mask}
 
 label
   next_event, done_event;
@@ -180,17 +181,14 @@ key_dongnext_k: begin                  {dongle drive to next data record}
           pend_redraw := true;
           end;
 key_runto_k: begin                     {run dongle from curr position to cursor}
-          if dongrec_p = nil           {no current record to start from ?}
-            then goto done_event;
           rec_p := csvana_datt_rec(curs); {get pointer to record at cursor}
           if rec_p = nil               {no target record to end on ?}
             then goto done_event;
-          if rec_p^.time < dongrec_p^.time {cursor is before curr dongle record ?}
-            then goto done_event;
-          while dongrec_p <> rec_p do begin {advance until reach target record}
-            dong_rec_next;             {to next record, drive dongle accordingly}
-            pend_redraw := true;
-            end;                       {back to go to next record}
+          case dong_run(rec_p, [], mask) of
+runend_stoprec_k, runend_diff_k, runend_end_k: begin {actually ran ?}
+              pend_redraw := true;
+              end;
+            end;
           end;
 
         end;                           {end of our key ID cases}

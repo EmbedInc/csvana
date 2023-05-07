@@ -18,6 +18,19 @@ const
   zoomf = 1.2;                         {auto zoom in/out size change factor}
 
 type
+  runend_k_t = (                       {ID for why run ended}
+    runend_nstart_k,                   {not run, no starting record}
+    runend_atend_k,                    {not run, at end of data}
+    runend_atstop_k,                   {not run, already at ending record}
+    runend_aftstop_k,                  {not run, start was after ending record}
+    runend_stoprec_k,                  {ran, stopped at ending record}
+    runend_diff_k,                     {ran, pins at different levels than driven}
+    runend_end_k);                     {ran, stopped at end of data}
+
+  runstop_k_t = (                      {reasons to stop run}
+    runstop_diff_k);                   {stop if pins different from driven}
+  runstop_t = set of runstop_k_t;      {all the stop reasons in one word}
+
   csvana_name_p_t = ^csvana_name_t;
   csvana_name_t = record               {name of one field}
     next_p: csvana_name_p_t;           {to next field name}
@@ -230,6 +243,13 @@ procedure dong_rec_next;               {to next data record, drive pins accordin
 
 procedure dong_rec_set (               {set pins according to data record}
   in      rec_p: csvana_rec_p_t);      {pointer to data record, NIL for none}
+  val_param; extern;
+
+function dong_run (                    {run from current dongle record}
+  in      stoprec_p: csvana_rec_p_t;   {record to stop at, run to end on NIL}
+  in      runstop: runstop_t;          {optional additional stop criteria}
+  out     diff: db25_pinmask_t)        {diff at end, if stop of diff requested}
+  :runend_k_t;                         {reason run ended}
   val_param; extern;
 
 procedure dong_show_driven;            {test pins, show which driven by dongle}

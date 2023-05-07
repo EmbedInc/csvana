@@ -10,6 +10,7 @@ define dong_show_driven;
 define dong_rec_set;
 define dong_rec_curs;
 define dong_rec_next;
+define dong_run;
 %include csvana.ins.pas;
 
 const
@@ -297,4 +298,80 @@ procedure dong_rec_next;               {to next data record, drive pins accordin
 begin
   if dongrec_p = nil then return;      {no current dongle record ?}
   dong_rec_set (dongrec_p^.next_p);    {set dongle state to the next record}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine DONG_RUN (STOPREC_P, RUNSTOP, DIFF, RUNEND)
+*
+*   Run the dongle by driving it from successive data records.
+*
+*   The run is ended when the record at STOPREC_P is reached, or any of the
+*   additional run stop conditions specified by RUNSTOP are met.  If any run is
+*   performed, then DONGREC_P is updated to point to the record that the dongle
+*   is being driven from.  This will be the same as STOPREC_P if the run was
+*   stopped due to hitting the stop record.
+*
+*   STOPREC_P may be NIL, which specifies no record to stop at.  The run will be
+*   stopped at the last data record, unless a criterion specified by RUNSTOP is
+*   encountered first.
+*
+*   DIFF is returned the mask of pins that are at a different level from what
+*   they are driven at.  This is only valid (is non-zero) when the DIFF stop
+*   reason is specified in RUNSTOP.
+*
+*   The function return value indicates the reason the run was ended, or never
+*   started in the first place.
+}
+function dong_run (                    {run from current dongle record}
+  in      stoprec_p: csvana_rec_p_t;   {record to stop at, run to end on NIL}
+  in      runstop: runstop_t;          {optional additional stop criteria}
+  out     diff: db25_pinmask_t)        {diff at end, if stop of diff requested}
+  :runend_k_t;                         {reason run ended}
+  val_param;
+
+begin
+  diff := 0;                           {init for DIFF not valid}
+
+  if dongrec_p = nil then begin        {check for no starting record}
+    dong_run := runend_nstart_k;
+    return;
+    end;
+
+  if dongrec_p^.next_p = nil then begin {check for at last record}
+    dong_run := runend_atend_k;
+    return;
+    end;
+
+  if stoprec_p <> nil then begin       {ending record specified ?}
+    if dongrec_p = stoprec_p then begin {already at the record to stop at ?}
+      dong_run := runend_atstop_k;
+      return;
+      end;
+    if dongrec_p^.time > stoprec_p^.time then begin {after ending record ?}
+      dong_run := runend_aftstop_k;
+      return;
+      end;
+    end;
+
+  dong_conn;                           {make sure connection to dongle is open}
+
+  while true do begin                  {run over successive records}
+    dong_rec_next;                     {to next record}
+    if runstop_diff_k in runstop then begin {stop at pins difference ?}
+      diff := db25_pins_diff(db25_p^); {get diff from driven to actual pin levels}
+      if diff <> 0 then begin          {found difference ?}
+        dong_run := runend_diff_k;     {indicate stopped because of pins difference}
+        return;
+        end;
+      end;
+    if dongrec_p = stoprec_p then begin {hit record to stop at ?}
+      dong_run := runend_stoprec_k;    {indicate stop reason}
+      return;
+      end;
+    if dongrec_p^.next_p = nil then begin {at last record in data set ?}
+      dong_run := runend_end_k;        {indicate stop reason}
+      return;
+      end;
+    end;                               {back to advance to next data record}
   end;
