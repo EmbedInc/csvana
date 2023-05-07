@@ -6,7 +6,7 @@ define csvana;
 
 const
   max_msg_args = 2;                    {max arguments we can pass to a message}
-  n_cmdnames_k = 9;                    {number of command names in the list}
+  n_cmdnames_k = 10;                   {number of command names in the list}
   cmdname_maxchars_k = 7;              {max chars in any command name}
 
   cmdname_len_k = cmdname_maxchars_k + 1; {number of chars to reserve per cmd name}
@@ -28,6 +28,7 @@ var
     'OFF    ',                         {7}
     'R      ',                         {8}
     'DR     ',                         {9}
+    'RD     ',                         {10}
     ];
 
 var
@@ -35,6 +36,7 @@ var
     %include '(cog)lib/string_treename.ins.pas';
   prompt:                              {prompt string for entering command}
     %include '(cog)lib/string4.ins.pas';
+  mask: db25_pinmask_t;                {scratch pins mask}
   iname_set: boolean;                  {TRUE if the input file name already set}
   tst_set, ten_set: boolean;           {start/end data time on command line}
 
@@ -228,6 +230,7 @@ loop_cmd:
   writeln ('ON, OFF        - Dongle on or off');
   writeln ('R              - Read DB-25 pins');
   writeln ('DR             - Find which DB-25 pins driven by dongle');
+  writeln ('RD             - Run until pins different from driven');
 
   writeln ('Q or QUIT      - Exit the program');
 
@@ -327,6 +330,46 @@ loop_cmd:
   lockout;
   dong_show_driven;                    {test I/O pins, show which driven by dongle}
   unlockout;
+  end;
+{
+**********
+*
+*   RD
+*
+*   Run from the current dongle record until the pins are found at different
+*   levels than what the dongle is being driven to.
+}
+10: begin
+  if not_eos then goto err_extra;
+
+  if dongrec_p = nil then begin
+    lockout;
+    writeln ('Dongle not currently driven.');
+    unlockout;
+    goto done_cmd;
+    end;
+
+  case dong_run(nil, [runstop_diff_k], mask) of
+runend_stoprec_k, runend_end_k: begin
+      lockout;
+      db25_show_pinhead;               {write pins label header}
+      db25_show_drive (db25_p^);
+      unlockout;
+      csvana_do_redraw;
+      end;
+runend_diff_k: begin
+      lockout;
+      db25_show_pinhead;               {write pins label header}
+      db25_show_drive (db25_p^);
+      db25_show_pins (                 {show pin states}
+        db25_p^.pins,                  {pin values to show}
+        mask,                          {mask of pins to show}
+        'Diff',                        {label for this line}
+        '0', '1', ' ');                {values to show for low, high, masked off}
+      unlockout;
+      csvana_do_redraw;
+      end;
+    end;
   end;
 {
 **********
