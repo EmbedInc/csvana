@@ -94,7 +94,6 @@ next_event:                            {back here to get the next event}
       if pend_resize then begin        {handle pending resize}
         pend_resize := false;
         csvana_do_resize;
-        pend_redraw := true;           {cause redraw after size adjustment}
         end;
       if pend_redraw then begin        {handle pending redraw}
         pend_redraw := false;

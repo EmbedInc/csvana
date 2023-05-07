@@ -171,7 +171,7 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_REDRAW
+*   Subroutine CSVANA_DRAW
 *
 *   Redraw the whole display with the current parameters.
 }

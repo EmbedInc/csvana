@@ -25,6 +25,7 @@ begin
     if do_resize then begin            {pending resize ?}
       do_resize := false;              {clear the event condition}
       csvana_draw_resize;              {do the resize}
+      do_redraw := true;               {must redraw after reconfigure}
       next;                            {back to check for any pending tasks again}
       end;
     if do_redraw then begin            {pending redraw ?}
