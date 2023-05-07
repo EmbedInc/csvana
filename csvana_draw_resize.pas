@@ -170,5 +170,6 @@ begin
     szmem_p^,                          {parent memory context for tick mark descriptors}
     xticks_p);                         {returned pointer to first tick mark}
 
+  do_redraw := true;                   {need to redraw everything after size change}
   csvana_draw_leave;                   {end single-threaded drawing}
   end;

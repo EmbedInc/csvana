@@ -76,6 +76,9 @@ begin
   sys_event_create_bool (evdrtask);    {create event for new DO_xxx task pending}
   do_resize := true;                   {will require adjustment to drawing size}
   do_redraw := true;                   {will need to be drawn}
+
+  tactiv := -1.0;                      {init activity indicator to off}
+  tactiv_drawn := false;
   end;
 {
 ********************************************************************************

@@ -2,6 +2,7 @@
 }
 module csvana_draw;
 define csvana_draw;
+define csvana_draw_tactiv;
 %include 'csvana.ins.pas';
 {
 ********************************************************************************
@@ -194,6 +195,7 @@ begin
   csvana_draw_enter;                   {start single-threaded drawing}
   rend_set.rgb^ (0.0, 0.0, 0.0);
   rend_prim.clear_cwind^;
+  tactiv_drawn := false;               {activity indicator definitely not drawn now}
 {
 *   Set DONGREC according to whether to show a dongle data record interval.
 *   When DONGEC is set, then DONGX1 and DONGX2 are the left/right drawing limits
@@ -330,5 +332,113 @@ otherwise                              {all other more subordinate ticks}
     end;                               {back for next dependent variable}
 
 leave:                                 {common exit point}
+  do_tactiv := true;                   {activity indicator must be refreshed}
   csvana_draw_leave;                   {end single-threaded drawing}
+  end;
+{
+********************************************************************************
+*
+*   Local subroutine XOR_ON
+*
+*   Set up for drawing in XOR mode.  Drawing once leaves a visible trace.
+*   Drawing a second time erases the trace.
+}
+procedure xor_on;
+  val_param; internal;
+
+begin
+  rend_set.iterp_pixfun^ (rend_iterp_red_k, rend_pixfun_xor_k); {set XOR mode}
+  rend_set.iterp_pixfun^ (rend_iterp_grn_k, rend_pixfun_xor_k);
+  rend_set.iterp_pixfun^ (rend_iterp_blu_k, rend_pixfun_xor_k);
+  rend_set.rgb^ (0.5, 0.5, 0.5);       {color for maximum XOR contrast}
+  end;
+{
+********************************************************************************
+*
+*   Local subroutine XOR_OFF
+*
+*   Get out of XOR drawing mode, back to normal drawing.
+}
+procedure xor_off;
+  val_param; internal;
+
+begin
+  rend_set.iterp_pixfun^ (rend_iterp_red_k, rend_pixfun_insert_k); {restore pixfun}
+  rend_set.iterp_pixfun^ (rend_iterp_grn_k, rend_pixfun_insert_k);
+  rend_set.iterp_pixfun^ (rend_iterp_blu_k, rend_pixfun_insert_k);
+  end;
+{
+********************************************************************************
+*
+*   Local subroutine ACTIV_LINE (X)
+*
+*   Draw the activity line at the 2DIM coordinate X.  TACTIVX will be set
+*   accordingly.  XOR drawing must be in affect.
+}
+procedure activ_line (                 {draw the activity line}
+  in      x: sys_int_machine_t);       {2DIM X coordinate to draw line at}
+  val_param; internal;
+
+begin
+  rend_set.cpnt_2dimi^ (x, 0);         {to top of line}
+  rend_prim.vect_2dimi^ (x, devdy-1);  {draw to bottom of line}
+
+  tactivx := x;                        {save X of where activity line is}
+  tactiv_drawn := not tactiv_drawn;    {toggle line is drawn state}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DRAW_TACTIV
+*
+*   Update the activity indicator according to the current configuration.
+}
+procedure csvana_draw_tactiv;          {draw or erase activity indicator, as configured}
+  val_param;
+
+var
+  p2d: vect_2d_t;                      {point in 2D space}
+  p2dim: vect_2d_t;                    {point in 2DIM space}
+  x: sys_int_machine_t;                {2DIM X where to draw activity line}
+
+label
+  tactiv_on, ton_done;
+
+begin
+  if (tactiv >= datt1) and (tactiv <= datt2) {show activity indicator ?}
+    then goto tactiv_on;
+{
+*   The activity indicator is supposed to be off.
+}
+  if not tactiv_drawn then return;     {already is off, nothing to do ?}
+
+  csvana_draw_enter;                   {enter drawing mode}
+  xor_on;                              {will draw in XOR mode}
+  activ_line (tactivx);                {erase the line}
+  xor_off;                             {back to normal drawing mode}
+  csvana_draw_leave;                   {exit drawing mode}
+  return;
+{
+*   The activity indicator is supposed to be on.
+}
+tactiv_on:
+  csvana_draw_enter;                   {enter drawing mode}
+
+  p2d.x := dattx(tactiv);              {bottom of activity line in 2D space}
+  p2d.y := 0.0;
+  rend_get.xfpnt_2d^ (p2d, p2dim);     {find same point in 2DIM space}
+  x := max(0, min(devdx-1, trunc(p2dim.x))); {guarantee valid 2DIM X coordinate}
+
+  if tactiv_drawn and (tactivx = x)    {already drawn as desired ?}
+    then goto ton_done;
+
+  xor_on;                              {will draw in XOR mode}
+  if tactiv_drawn then begin           {currently drawn at different coordinate ?}
+    activ_line (tactivx);              {erase the line}
+    end;
+  activ_line (x);                      {draw at the new location}
+  xor_off;                             {back to normal drawing mode}
+
+ton_done:                              {done handling activity indicator on case}
+  csvana_draw_leave;                   {exit drawing mode}
   end;

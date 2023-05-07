@@ -4,6 +4,7 @@ module csvana_draw_thread;
 define csvana_draw_thread;
 define csvana_do_resize;
 define csvana_do_redraw;
+define csvana_do_tactiv;
 %include 'csvana.ins.pas';
 {
 ********************************************************************************
@@ -25,13 +26,17 @@ begin
     if do_resize then begin            {pending resize ?}
       do_resize := false;              {clear the event condition}
       csvana_draw_resize;              {do the resize}
-      do_redraw := true;               {must redraw after reconfigure}
       next;                            {back to check for any pending tasks again}
       end;
     if do_redraw then begin            {pending redraw ?}
       do_redraw := false;              {clear the event condition}
       csvana_draw;                     {do the redraw}
       next;                            {back to check for any pending tasks again}
+      end;
+    if do_tactiv then begin            {pending activity indicator update ?}
+      do_tactiv := false;              {clear the event condition}
+      csvana_draw_tactiv;              {update the activity indicator}
+      next;
       end;
     sys_event_wait (evdrtask, stat);   {wait for new task to perform}
     end;                               {back again to check for something to do}
@@ -62,5 +67,21 @@ procedure csvana_do_redraw;            {cause drawing thread to redraw display}
 
 begin
   do_redraw := true;                   {indicate redraw pending}
+  sys_event_notify_bool (evdrtask);    {indicate pending drawing task to perform}
+  end;
+{
+********************************************************************************
+*
+*   Subroutine CSVANA_DO_TACTIV
+*
+*   Cause the activity indicator to be updated to the current state.  The
+*   activity indicator is drawn when TACTIV is within the current displayed data
+*   time range, and erased otherwise.
+}
+procedure csvana_do_tactiv;            {cause activity indicator to be redrawn}
+  val_param;
+
+begin
+  do_tactiv := true;                   {indicate activity redraw pending}
   sys_event_notify_bool (evdrtask);    {indicate pending drawing task to perform}
   end;

@@ -88,6 +88,7 @@ var (csvana)
   evdrtask: sys_sys_event_id_t;        {drawing task pending, sig when DO_xxx set}
   do_resize: boolean;                  {need to adjust to graphics device size}
   do_redraw: boolean;                  {need to refresh drawing}
+  do_tactiv: boolean;                  {need to update activity indicator}
   {
   *   Drawing configuration state.  This can change with the drawing area size.
   }
@@ -110,6 +111,9 @@ var (csvana)
   datdt: double;                       {data time interval size}
   meas1, meas2: double;                {start/end measuring interval data values}
   curs: double;                        {cursor data value}
+  tactiv: double;                      {time at which to show activity, <0 off}
+  tactivx: sys_int_machine_t;          {2DIM X activity indicator curr drawn at}
+  tactiv_drawn: boolean;               {activity indicator is currently drawn}
   {
   *   State for interacting with the DB-25 board and a dongle.
   }
@@ -137,12 +141,18 @@ procedure csvana_do_redraw;            {cause drawing thread to redraw display}
 procedure csvana_do_resize;            {cause drawing thread to resize to display}
   val_param; extern;
 
+procedure csvana_do_tactiv;            {cause activity indicator to be redrawn}
+  val_param; extern;
+
 procedure csvana_drag_cursor (         {drag data value cursor}
   in      key: rend_event_key_t;       {key press event to start drag}
   in out  redraw: boolean);            {will set to TRUE if redraw required}
   val_param; extern;
 
 procedure csvana_draw;                 {refresh the drawing area}
+  val_param; extern;
+
+procedure csvana_draw_tactiv;          {draw or erase activity indicator, as configured}
   val_param; extern;
 
 procedure csvana_draw_enter;           {enter drawing mode, single threaded}

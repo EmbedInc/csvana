@@ -358,6 +358,9 @@ begin
 
   while true do begin                  {run over successive records}
     dong_rec_next;                     {to next record}
+    tactiv := dongrec_p^.time;         {set data time of activity indicator}
+    csvana_do_tactiv;                  {make sure activity indicator is updated}
+
     if runstop_diff_k in runstop then begin {stop at pins difference ?}
       diff := db25_pins_diff(db25_p^); {get diff from driven to actual pin levels}
       if diff <> 0 then begin          {found difference ?}
@@ -365,10 +368,12 @@ begin
         return;
         end;
       end;
+
     if dongrec_p = stoprec_p then begin {hit record to stop at ?}
       dong_run := runend_stoprec_k;    {indicate stop reason}
       return;
       end;
+
     if dongrec_p^.next_p = nil then begin {at last record in data set ?}
       dong_run := runend_end_k;        {indicate stop reason}
       return;
