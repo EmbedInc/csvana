@@ -4,8 +4,8 @@ module csvana_xform;
 define dattx;
 define datxt;
 define pix2d;
-define csvana_dataind;
-%include 'csvana.ins.pas';
+define anashow_dataind;
+%include 'anashow.ins.pas';
 {
 ********************************************************************************
 *
@@ -65,13 +65,13 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DATAIND (X, Y, IND)
+*   Subroutine ANASHOW_DATAIND (X, Y, IND)
 *
 *   Find which data indicator is selected by the 2D space X,Y coordinate.  IND
 *   is returned with the selected indicator ID, or NONE which means that X,Y is
 *   not a valid data indicator selection coordinate.
 }
-procedure csvana_dataind (             {find which data indicator specified by X,Y}
+procedure anashow_dataind (            {find which data indicator specified by X,Y}
   in      x, y: real;                  {2D space coordinate used to pick indicator}
   out     ind: csvana_ind_k_t);        {returned ID of indicator, NONE if no match}
   val_param;

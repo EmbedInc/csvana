@@ -1,9 +1,9 @@
 {   Drawing routines.
 }
-module csvana_draw;
-define csvana_draw;
-define csvana_draw_tactiv;
-%include 'csvana.ins.pas';
+module anashow_draw;
+define anashow_draw;
+define anashow_draw_tactiv;
+%include 'anashow.ins.pas';
 {
 ********************************************************************************
 *
@@ -172,11 +172,11 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DRAW
+*   Subroutine ANASHOW_DRAW
 *
 *   Redraw the whole display with the current parameters.
 }
-procedure csvana_draw;
+procedure anashow_draw;
   val_param;
 
 var
@@ -192,7 +192,7 @@ label
   leave;
 
 begin
-  csvana_draw_enter;                   {start single-threaded drawing}
+  anashow_draw_enter;                  {start single-threaded drawing}
   rend_set.rgb^ (0.0, 0.0, 0.0);
   rend_prim.clear_cwind^;
   tactiv_drawn := false;               {activity indicator definitely not drawn now}
@@ -333,7 +333,7 @@ otherwise                              {all other more subordinate ticks}
 
 leave:                                 {common exit point}
   do_tactiv := true;                   {activity indicator must be refreshed}
-  csvana_draw_leave;                   {end single-threaded drawing}
+  anashow_draw_leave;                  {end single-threaded drawing}
   end;
 {
 ********************************************************************************
@@ -389,11 +389,11 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DRAW_TACTIV
+*   Subroutine ANASHOW_DRAW_TACTIV
 *
 *   Update the activity indicator according to the current configuration.
 }
-procedure csvana_draw_tactiv;          {draw or erase activity indicator, as configured}
+procedure anashow_draw_tactiv;         {draw or erase activity indicator, as configured}
   val_param;
 
 var
@@ -412,17 +412,17 @@ begin
 }
   if not tactiv_drawn then return;     {already is off, nothing to do ?}
 
-  csvana_draw_enter;                   {enter drawing mode}
+  anashow_draw_enter;                  {enter drawing mode}
   xor_on;                              {will draw in XOR mode}
   activ_line (tactivx);                {erase the line}
   xor_off;                             {back to normal drawing mode}
-  csvana_draw_leave;                   {exit drawing mode}
+  anashow_draw_leave;                  {exit drawing mode}
   return;
 {
 *   The activity indicator is supposed to be on.
 }
 tactiv_on:
-  csvana_draw_enter;                   {enter drawing mode}
+  anashow_draw_enter;                  {enter drawing mode}
 
   p2d.x := dattx(tactiv);              {bottom of activity line in 2D space}
   p2d.y := 0.0;
@@ -440,5 +440,5 @@ tactiv_on:
   xor_off;                             {back to normal drawing mode}
 
 ton_done:                              {done handling activity indicator on case}
-  csvana_draw_leave;                   {exit drawing mode}
+  anashow_draw_leave;                  {exit drawing mode}
   end;

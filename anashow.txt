@@ -1,7 +1,7 @@
-                              Program CSVANA
-                                6 May 2023
+                              Program ANASHOW
+                                13 Aug 2023
 
-csvana [options]
+anashow [options]
 
 Display the contents of a logic analyzer CSV file.  Commands can be
 entered at a command prompt to alter the drawing interactively, or to get

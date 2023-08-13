@@ -1,19 +1,19 @@
 {   Drawing setup.
 }
-module csvana_draw_setup;
-define csvana_draw_setup;
-define csvana_draw_run;
-define csvana_draw_enter;
-define csvana_draw_leave;
-%include 'csvana.ins.pas';
+module anashow_draw_setup;
+define anashow_draw_setup;
+define anashow_draw_run;
+define anashow_draw_enter;
+define anashow_draw_leave;
+%include 'anashow.ins.pas';
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DRAW_SETUP
+*   Subroutine ANASHOW_DRAW_SETUP
 *
 *   Do all the one-time drawing setup.
 }
-procedure csvana_draw_setup;           {do one-time setup for drawing}
+procedure anashow_draw_setup;          {do one-time setup for drawing}
   val_param;
 
 var
@@ -67,7 +67,7 @@ begin
   rend_set.min_bits_vis^ (24.0);       {try for high color resolution}
   rend_set.update_mode^ (rend_updmode_buffall_k);
   szmem_p := nil;                      {init to no mem context for current size}
-  csvana_events_setup;                 {set up RENDlib events}
+  anashow_events_setup;                {set up RENDlib events}
   rend_set.exit_rend^;
 
   sys_thread_lock_create (drlock, stat); {create mutex for drawing}
@@ -83,13 +83,13 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DRAW_RUN
+*   Subroutine ANASHOW_DRAW_RUN
 *
 *   Start the background thread to draw the CSV data.
 *
 *   This routine only launches the background drawing task and returns quickly.
 }
-procedure csvana_draw_run;             {start drawing, spawns drawing thread}
+procedure anashow_draw_run;            {start drawing, spawns drawing thread}
   val_param;
 
 var
@@ -98,14 +98,14 @@ var
 
 begin
   sys_thread_create (                  {start the drawing thread}
-    addr(csvana_draw_thread),          {pointer to root thread routine}
+    addr(anashow_draw_thread),         {pointer to root thread routine}
     0,                                 {argument passed to thread, not used}
     thid,                              {returned thread ID}
     stat);
   sys_error_abort (stat, '', '', nil, 0);
 
   sys_thread_create (                  {start events handling}
-    addr(csvana_events_thread),        {pointer to root thread routine}
+    addr(anashow_events_thread),       {pointer to root thread routine}
     0,                                 {argument passed to thread, not used}
     thid,                              {returned thread ID}
     stat);
@@ -114,11 +114,11 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DRAW_ENTER
+*   Subroutine ANASHOW_DRAW_ENTER
 *
 *   Acquire the drawing lock and enter RENDlib drawing mode.
 }
-procedure csvana_draw_enter;           {enter drawing mode, single threaded}
+procedure anashow_draw_enter;          {enter drawing mode, single threaded}
   val_param;
 
 begin
@@ -128,11 +128,11 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DRAW_LEAVE
+*   Subroutine ANASHOW_DRAW_LEAVE
 *
 *   Exit RENDlib drawing mode and release the drawing lock.
 }
-procedure csvana_draw_leave;           {leave drawing mode, release single thread lock}
+procedure anashow_draw_leave;          {leave drawing mode, release single thread lock}
   val_param;
 
 begin

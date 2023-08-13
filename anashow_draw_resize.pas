@@ -1,8 +1,8 @@
 {   Update to drawing area size.
 }
-module csvana_draw_resize;
-define csvana_draw_resize;
-%include 'csvana.ins.pas';
+module anashow_draw_resize;
+define anashow_draw_resize;
+%include 'anashow.ins.pas';
 
 const
   text_minfrx = 1.0 / 90.0;            {min text size, fraction of X dimension}
@@ -38,11 +38,11 @@ begin
 {
 ********************************************************************************
 *
-*   Local subroutine CSVANA_DRAW_RESIZE
+*   Local subroutine ANASHOW_DRAW_RESIZE
 *
 *   Configure or re-configure to the current drawing device size.
 }
-procedure csvana_draw_resize;
+procedure anashow_draw_resize;
   val_param;
 
 var
@@ -52,7 +52,7 @@ var
   name_p: csvana_name_p_t;             {to dependent value name descriptor}
 
 begin
-  csvana_draw_enter;                   {start single-threaded drawing}
+  anashow_draw_enter;                  {start single-threaded drawing}
 
   if szmem_p <> nil then begin         {mem context exists for previous size ?}
     util_mem_context_del (szmem_p);    {delete all dyn mem for old size config}
@@ -171,5 +171,5 @@ begin
     xticks_p);                         {returned pointer to first tick mark}
 
   do_redraw := true;                   {need to redraw everything after size change}
-  csvana_draw_leave;                   {end single-threaded drawing}
+  anashow_draw_leave;                  {end single-threaded drawing}
   end;

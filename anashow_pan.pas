@@ -1,8 +1,8 @@
 {   Interactive graphical panning.
 }
-module csvana_pan;
-define csvana_pan;
-%include 'csvana.ins.pas';
+module anashow_pan;
+define anashow_pan;
+%include 'anashow.ins.pas';
 
 var
   xst, xen: real;                      {starting and ending X being dragged}
@@ -64,7 +64,7 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_PAN (KEY, REDRAW)
+*   Subroutine ANASHOW_PAN (KEY, REDRAW)
 *
 *   Drag a displayed X position to pan the display.
 *
@@ -72,7 +72,7 @@ begin
 *   be a key down event.  If the display should be redrawn as a result of the
 *   pan operation, then REDRAW is set to TRUE.  Otherwise, REDRAW is unaltered.
 }
-procedure csvana_pan (                 {pan the display along the X axis}
+procedure anashow_pan (                {pan the display along the X axis}
   in      key: rend_event_key_t;       {key press event to start drag}
   in out  redraw: boolean);            {will set to TRUE if redraw required}
   val_param;
@@ -88,7 +88,7 @@ label
   event, evnotus, dragged, leave;
 
 begin
-  csvana_draw_enter;                   {enter drawing mode}
+  anashow_draw_enter;                  {enter drawing mode}
   pix2d (key.x, key.y, x, ydrag);      {get drag start coordinate in 2D space}
   xst := clipx(x);                     {init drag start X}
   xen := xst;                          {init to no net drag displacement}
@@ -180,9 +180,9 @@ dragged:
   datt1 := d1;                         {set new data range to display}
   datt2 := d2;
 
-  csvana_datt_upd;                     {update data range control state}
+  anashow_datt_upd;                    {update data range control state}
   redraw := true;                      {display will need to be redrawn}
 
 leave:                                 {common exit point}
-  csvana_draw_leave;                   {leave drawing mode}
+  anashow_draw_leave;                  {leave drawing mode}
   end;

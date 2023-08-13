@@ -5,7 +5,7 @@ define csvana_root_new;
 define csvana_root_del;
 define csvana_rec_new;
 define csvana_field_new;
-%include 'csvana.ins.pas';
+%include 'csvana2.ins.pas';
 {
 ********************************************************************************
 *

@@ -1,9 +1,9 @@
 {   Graphics events handling.
 }
-module csvana_events;
-define csvana_events_setup;
-define csvana_events_thread;
-%include 'csvana.ins.pas';
+module anashow_events;
+define anashow_events_setup;
+define anashow_events_thread;
+%include 'anashow.ins.pas';
 
 const
   key_drag_k = 1;                      {key ID for dragging a cursor}
@@ -16,11 +16,11 @@ const
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_EVENTS_SETUP
+*   Subroutine ANASHOW_EVENTS_SETUP
 *
 *   Set up the RENDlib events they way they will be used here.
 }
-procedure csvana_events_setup;
+procedure anashow_events_setup;
   val_param;
 
 begin
@@ -58,12 +58,12 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_EVENTS_THREAD (ARG)
+*   Subroutine ANASHOW_EVENTS_THREAD (ARG)
 *
 *   This subroutine is run from a separate thread.  It handles graphics events
 *   in an infinite loop.
 }
-procedure csvana_events_thread (       {thread to handle graphics events}
+procedure anashow_events_thread (      {thread to handle graphics events}
   in      arg: sys_int_adr_t);         {arbitrary argument, unused}
   val_param;
 
@@ -93,11 +93,11 @@ next_event:                            {back here to get the next event}
     then begin                         {no event is immediately available}
       if pend_resize then begin        {handle pending resize}
         pend_resize := false;
-        csvana_do_resize;
+        anashow_do_resize;
         end;
       if pend_redraw then begin        {handle pending redraw}
         pend_redraw := false;
-        csvana_do_redraw;
+        anashow_do_redraw;
         end;
       rend_event_get (ev);             {get next event, wait as long as it takes}
       end
@@ -136,29 +136,29 @@ key_drag_k: begin                      {drag a data value}
           csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
           end;
 key_pan_k: begin                       {pan the display horizontally}
-          csvana_pan (ev.key, pend_resize); {pan in X}
+          anashow_pan (ev.key, pend_resize); {pan in X}
           end;
 key_zoomin_k: begin                    {zoom in}
           if rend_key_mod_shift_k in ev.key.modk then begin {zoom in to meas range ?}
             d := (meas2 - meas1) * minmeas; {room to leave either side}
             datt1 := meas1 - d;        {set data range to display}
             datt2 := meas2 + d;
-            csvana_datt_upd;           {sanitize and update derived values}
+            anashow_datt_upd;          {sanitize and update derived values}
             pend_resize := true;
             goto done_event;
             end;
-          csvana_zoom (1, curs);       {zoom in about the data cursor}
+          anashow_zoom (1, curs);      {zoom in about the data cursor}
           pend_resize := true;         {need to re-adjust to drawing area size}
           end;
 key_zoomout_k: begin                   {zoom out}
           if rend_key_mod_shift_k in ev.key.modk then begin {zoom out to all data ?}
             datt1 := csv_p^.rec_p^.time;
             datt2 := csv_p^.rec_last_p^.time;
-            csvana_datt_upd;           {sanitize and update derived values}
+            anashow_datt_upd;          {sanitize and update derived values}
             pend_resize := true;
             goto done_event;
             end;
-          csvana_zoom (-1, curs);      {zoom out about the data cursor}
+          anashow_zoom (-1, curs);     {zoom out about the data cursor}
           pend_resize := true;         {need to re-adjust to drawing area size}
           end;
 key_cursdong_k: begin                  {set dongle data record from cursor}
@@ -203,7 +203,7 @@ rend_ev_scrollv_k: begin               {vertical scroll wheel motion}
       pix2d (px, py, x, y);            {make pointer location in 2D space}
       x := max(datlx, min(datrx, x));  {clip to displayed data range}
       d := datxt (x);                  {make data value to zoom about}
-      csvana_zoom (ev.scrollv.n, d);   {do the zoom}
+      anashow_zoom (ev.scrollv.n, d);  {do the zoom}
       pend_resize := true;             {need to re-adjust to drawing area size}
       end;
 

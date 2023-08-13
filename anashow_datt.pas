@@ -1,14 +1,14 @@
 {   Data time values manipulation.
 }
 module csvana_datt;
-define csvana_datt_upd;
-define csvana_zoom;
+define anashow_datt_upd;
+define anashow_zoom;
 define csvana_datt_rec;
-%include 'csvana.ins.pas';
+%include 'anashow.ins.pas';
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_DATT_UPD
+*   Subroutine ANASHOW_DATT_UPD
 *
 *   Sanitize and update the data range control state.  The following values are
 *   sanitized:
@@ -34,7 +34,7 @@ define csvana_datt_rec;
 *
 *       Size of data range to display (DATT2 - DATT1).
 }
-procedure csvana_datt_upd;             {sanitize and update data range control state}
+procedure anashow_datt_upd;            {sanitize and update data range control state}
   val_param;
 
 var
@@ -60,14 +60,14 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine CSVANA_ZOOM (ZIN, ZX)
+*   Subroutine ANASHOW_ZOOM (ZIN, ZX)
 *
 *   Zoom in ZIN standard increments.  ZIN can be negative to cause zooming out.
 *
 *   The draw area is scaled about the data value ZX.  Only the display mapping
 *   state is updated.  The display is not redrawn.
 }
-procedure csvana_zoom (                {zoom in/out}
+procedure anashow_zoom (               {zoom in/out}
   in      zin: sys_int_machine_t;      {increments to zoom in, negative for zoom out}
   in      zx: double);                 {X data value to zoom about}
   val_param;
@@ -82,7 +82,7 @@ begin
 
   datt1 := (datt1 - zx) * zf + zx;     {zoom about the zxor}
   datt2 := (datt2 - zx) * zf + zx;
-  csvana_datt_upd;                     {sanitize the result}
+  anashow_datt_upd;                    {sanitize the result}
   end;
 {
 ********************************************************************************

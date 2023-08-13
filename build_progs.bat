@@ -7,4 +7,4 @@ rem
 setlocal
 call build_pasinit
 
-src_progl csvana
+src_progl anashow

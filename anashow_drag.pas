@@ -2,7 +2,7 @@
 }
 module csvana_drag;
 define csvana_drag_cursor;
-%include 'csvana.ins.pas';
+%include 'anashow.ins.pas';
 {
 ********************************************************************************
 *
@@ -70,10 +70,10 @@ label
   event, evnotus, done, leave;
 
 begin
-  csvana_draw_enter;                   {enter drawing mode}
+  anashow_draw_enter;                  {enter drawing mode}
 
   pix2d (key.x, key.y, x, y);          {make 2D space click coordinate in X,Y}
-  csvana_dataind (x, y, indid);        {get ID of selected indicator}
+  anashow_dataind (x, y, indid);       {get ID of selected indicator}
 
   case indid of                        {get pointer to data value being dragged}
 csvana_ind_st_k: dat_p := addr(meas1);
@@ -156,8 +156,8 @@ csvana_ind_en_k: begin                 {end of measuring interval}
       meas1 := min(meas1, meas2 - mindm);
       end;
     end;
-  csvana_datt_upd;                     {sanitize the altered state}
+  anashow_datt_upd;                    {sanitize the altered state}
 
 leave:                                 {common exit point}
-  csvana_draw_leave;                   {leave drawing mode}
+  anashow_draw_leave;                  {leave drawing mode}
   end;

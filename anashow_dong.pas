@@ -11,7 +11,7 @@ define dong_rec_set;
 define dong_rec_curs;
 define dong_rec_next;
 define dong_run;
-%include csvana.ins.pas;
+%include anashow.ins.pas;
 
 const
   clk_pin = 9;                         {clock line pin number}
@@ -359,7 +359,7 @@ begin
   while true do begin                  {run over successive records}
     dong_rec_next;                     {to next record}
     tactiv := dongrec_p^.time;         {set data time of activity indicator}
-    csvana_do_tactiv;                  {make sure activity indicator is updated}
+    anashow_do_tactiv;                 {make sure activity indicator is updated}
 
     if runstop_diff_k in runstop then begin {stop at pins difference ?}
       diff := db25_pins_diff(db25_p^); {get diff from driven to actual pin levels}

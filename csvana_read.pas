@@ -3,7 +3,7 @@
 module csvana_read;
 define csvana_read_file;
 define csvana_read_rec;
-%include 'csvana.ins.pas';
+%include 'csvana2.ins.pas';
 {
 ********************************************************************************
 *

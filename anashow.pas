@@ -1,8 +1,8 @@
 {   Program CSVANA csvfile
 }
-program csvana;
-define csvana;
-%include csvana.ins.pas;
+program anashow;
+define anashow;
+%include anashow.ins.pas;
 
 const
   max_msg_args = 2;                    {max arguments we can pass to a message}
@@ -184,10 +184,10 @@ done_opts:                             {done with all the command line options}
     meas1 := datt1;                    {init meas interval to full display range}
     meas2 := datt2;
     curs := (datt1 + datt2) / 2.0;     {init data cursor to middle of disp range}
-    csvana_datt_upd;                   {update and sanitize data range control state}
+    anashow_datt_upd;                  {update and sanitize data range control state}
 
-    csvana_draw_setup;                 {do one-time drawing setup}
-    csvana_draw_run;                   {start background drawing}
+    anashow_draw_setup;                {do one-time drawing setup}
+    anashow_draw_run;                  {start background drawing}
     end;
 {
 *   Let the user enter commands at a command prompt.
@@ -355,7 +355,7 @@ runend_stoprec_k, runend_end_k: begin
       db25_show_pinhead;               {write pins label header}
       db25_show_drive (db25_p^);
       unlockout;
-      csvana_do_redraw;
+      anashow_do_redraw;
       end;
 runend_diff_k: begin
       lockout;
@@ -367,7 +367,7 @@ runend_diff_k: begin
         'Diff',                        {label for this line}
         '0', '1', ' ');                {values to show for low, high, masked off}
       unlockout;
-      csvana_do_redraw;
+      anashow_do_redraw;
       end;
     end;
   end;
