@@ -33,33 +33,34 @@ var
   stat2: sys_err_t;                    {to avoid corrupting STAT}
 
 label
-  abort;
+  abort1, abort2;
 
 begin
   name.max := size_char(name.str);     {init local var string}
-  root_p := nil;                       {init to not returning with data}
+
+  csvana_root_new (mem, root_p);       {create root data structure, init to empty}
 
   csv_in_open (                        {open the CSV input file}
     fnam,                              {CSV file name}
+    root_p^.mem_p^,                    {parent memory context}
     cin,                               {CSV file reading state}
     stat);
-  if sys_error(stat) then return;
+  if sys_error(stat) then goto abort1;
 
-  csvana_root_new (mem, root_p);       {create root data structure, init to empty}
   string_copy (cin.conn.tnam, root_p^.tnam); {save full CSV file treename}
 {
 *   Read CSV file header line.
 }
   csv_in_line (cin, stat);             {read the header line}
-  if sys_error(stat) then goto abort;
+  if sys_error(stat) then goto abort2;
 
   csv_in_field_str (cin, name, stat);  {read name of independent variable, not used}
-  if sys_error(stat) then goto abort;
+  if sys_error(stat) then goto abort2;
 
   while true do begin                  {read dependent value names until end of line}
     csv_in_field_str (cin, name, stat); {read name of this value}
     if string_eos(stat) then exit;     {hit end of line ?}
-    if sys_error(stat) then goto abort; {hard error ?}
+    if sys_error(stat) then goto abort2; {hard error ?}
     csvana_field_new (root_p^, name);  {add new field to end of list}
     end;
 {
@@ -68,15 +69,18 @@ begin
   while true do begin                  {back here each new data line}
     csvana_read_rec (cin, root_p^, stat); {read line, create new data record}
     if file_eof(stat) then exit;       {hit end of file ?}
-    if sys_error(stat) then goto abort; {hard error ?}
+    if sys_error(stat) then goto abort2; {hard error ?}
     end;
 
   csv_in_close (cin, stat);            {close the CSV input file}
-  if sys_error(stat) then goto abort;  {hard error ?}
+  if sys_error(stat) then goto abort1; {hard error ?}
   return;                              {normal return point, no error}
-
-abort:                                 {error encountered with file open, STAT set}
-  csv_in_close (cin, stat2);           {close the CSV file}
+{
+*   Error exists.  STAT is already set to indicate the error.
+}
+abort2:
+  csv_in_close (cin, stat2);           {close the CSV file, if open}
+abort1:
   csvana_root_del (root_p);            {deallocate CSV file data dynamic memory}
   end;
 {
