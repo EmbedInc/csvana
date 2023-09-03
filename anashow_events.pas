@@ -127,72 +127,6 @@ rend_ev_wiped_rect_k: begin            {rectangle of pixels got wiped out}
       sys_wait (0.050);                {time for related events to show up}
       end;
 
-rend_ev_key_k: begin                   {a user key changed state}
-      px := ev.key.x;                  {update pointer location}
-      py := ev.key.y;
-      if not ev.key.down then goto done_event; {ignore key releases here}
-      case ev.key.key_p^.id_user of    {which of our keys is it ?}
-key_drag_k: begin                      {drag a data value}
-          csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
-          end;
-key_pan_k: begin                       {pan the display horizontally}
-          anashow_pan (ev.key, pend_resize); {pan in X}
-          end;
-key_zoomin_k: begin                    {zoom in}
-          if rend_key_mod_shift_k in ev.key.modk then begin {zoom in to meas range ?}
-            d := (meas2 - meas1) * minmeas; {room to leave either side}
-            datt1 := meas1 - d;        {set data range to display}
-            datt2 := meas2 + d;
-            anashow_datt_upd;          {sanitize and update derived values}
-            pend_resize := true;
-            goto done_event;
-            end;
-          anashow_zoom (1, curs);      {zoom in about the data cursor}
-          pend_resize := true;         {need to re-adjust to drawing area size}
-          end;
-key_zoomout_k: begin                   {zoom out}
-          if rend_key_mod_shift_k in ev.key.modk then begin {zoom out to all data ?}
-            datt1 := csv_p^.rec_p^.time;
-            datt2 := csv_p^.rec_last_p^.time;
-            anashow_datt_upd;          {sanitize and update derived values}
-            pend_resize := true;
-            goto done_event;
-            end;
-          anashow_zoom (-1, curs);     {zoom out about the data cursor}
-          pend_resize := true;         {need to re-adjust to drawing area size}
-          end;
-key_cursdong_k: begin                  {set dongle data record from cursor}
-          if rend_key_mod_shift_k in ev.key.modk then begin {go to first data record ?}
-            if csv_p = nil then goto done_event; {no data records at all ?}
-            dong_conn;                 {make sure connected to the dongle}
-            dong_rec_set (csv_p^.rec_p); {drive dongle from first data record}
-            pend_redraw := true;
-            goto done_event;
-            end;
-          dong_conn;                   {make sure connected to the dongle}
-          dong_rec_curs;               {set dongle record from cursor position}
-          pend_redraw := true;
-          end;
-key_dongnext_k: begin                  {dongle drive to next data record}
-          if dongrec_p = nil           {no current record to start from ?}
-            then goto done_event;
-          dong_rec_next;               {to next record}
-          pend_redraw := true;
-          end;
-key_runto_k: begin                     {run dongle from curr position to cursor}
-          rec_p := csvana_datt_rec(curs); {get pointer to record at cursor}
-          if rec_p = nil               {no target record to end on ?}
-            then goto done_event;
-          case dong_run(rec_p, [], mask) of
-runend_stoprec_k, runend_diff_k, runend_end_k: begin {actually ran ?}
-              pend_redraw := true;
-              end;
-            end;
-          end;
-
-        end;                           {end of our key ID cases}
-      end;
-
 rend_ev_pnt_move_k: begin              {the pointer moved}
       px := ev.pnt_move.x;             {update our saved pointer location}
       py := ev.pnt_move.y;
@@ -206,6 +140,111 @@ rend_ev_scrollv_k: begin               {vertical scroll wheel motion}
       anashow_zoom (ev.scrollv.n, d);  {do the zoom}
       pend_resize := true;             {need to re-adjust to drawing area size}
       end;
+
+rend_ev_key_k: begin                   {a user key changed state}
+      px := ev.key.x;                  {update pointer location}
+      py := ev.key.y;
+      if not ev.key.down then goto done_event; {ignore key releases here}
+      case ev.key.key_p^.id_user of    {which of our keys is it ?}
+{
+********************
+*
+*   Key: Drag a data value.
+}
+key_drag_k: begin
+  csvana_drag_cursor (ev.key, pend_redraw); {drag the independent data value cursor}
+  end;
+{
+********************
+*
+*   Key: Pan the display horizontally.
+}
+key_pan_k: begin
+  anashow_pan (ev.key, pend_resize);   {pan in X}
+  end;
+{
+********************
+*
+*   Key: Zoom in.
+}
+key_zoomin_k: begin
+  if rend_key_mod_shift_k in ev.key.modk then begin {zoom in to meas range ?}
+    d := (meas2 - meas1) * minmeas;    {room to leave either side}
+    datt1 := meas1 - d;                {set data range to display}
+    datt2 := meas2 + d;
+    anashow_datt_upd;                  {sanitize and update derived values}
+    pend_resize := true;
+    goto done_event;
+    end;
+  anashow_zoom (1, curs);              {zoom in about the data cursor}
+  pend_resize := true;                 {need to re-adjust to drawing area size}
+  end;
+{
+********************
+*
+*   Key: Zoom out.
+}
+key_zoomout_k: begin
+  if rend_key_mod_shift_k in ev.key.modk then begin {zoom out to all data ?}
+    datt1 := csv_p^.rec_p^.time;
+    datt2 := csv_p^.rec_last_p^.time;
+    anashow_datt_upd;                  {sanitize and update derived values}
+    pend_resize := true;
+    goto done_event;
+    end;
+  anashow_zoom (-1, curs);             {zoom out about the data cursor}
+  pend_resize := true;                 {need to re-adjust to drawing area size}
+  end;
+{
+********************
+*
+*   Key: Set dongle data record from cursor.
+}
+key_cursdong_k: begin
+  if rend_key_mod_shift_k in ev.key.modk then begin {go to first data record ?}
+    if csv_p = nil then goto done_event; {no data records at all ?}
+    dong_conn;                         {make sure connected to the dongle}
+    dong_rec_set (csv_p^.rec_p);       {drive dongle from first data record}
+    pend_redraw := true;
+    goto done_event;
+    end;
+  dong_conn;                           {make sure connected to the dongle}
+  dong_rec_curs;                       {set dongle record from cursor position}
+  pend_redraw := true;
+  end;
+{
+********************
+*
+*   Key: Set dongle drive to the next data record.
+}
+key_dongnext_k: begin
+  if dongrec_p = nil                   {no current record to start from ?}
+    then goto done_event;
+  dong_rec_next;                       {to next record}
+  pend_redraw := true;
+  end;
+{
+********************
+*
+*   Key: Run dongle from current position to the cursor.
+}
+key_runto_k: begin
+  rec_p := csvana_datt_rec(curs);      {get pointer to record at cursor}
+  if rec_p = nil                       {no target record to end on ?}
+    then goto done_event;
+  case dong_run(rec_p, [], mask) of
+runend_stoprec_k, runend_diff_k, runend_end_k: begin {actually ran ?}
+      pend_redraw := true;
+      end;
+    end;
+  end;
+{
+********************
+*
+*   Done with which-key cases.
+}
+        end;                           {end of our key ID cases}
+      end;                             {end of key changed event}
 
     end;                               {end of event type cases}
 done_event:                            {done handling the current event in EV}
