@@ -65,6 +65,7 @@ begin
   devname.len := 0;
   db25_p := nil;                       {init to not connected to DB-25 board}
   dongrec_p := nil;                    {init to no current dongle data record}
+  sim_init;                            {init simulated dongle state}
 {
 *   Initialize before reading the command line.
 }
@@ -241,6 +242,8 @@ loop_cmd:
   writeln ('Mid-butt: pan, Scroll: zoom in/out');
   writeln ('Down-arr: dongle to cursor, Shft-down-arr: dongle to first rec');
   writeln ('Rit-arr: dongle to next rec, Up-arr: run to data cursor');
+  writeln ('F1: set sim to curs, Shft-F1: set sim to start');
+  writeln ('F2: single step sim, shft-F2: run sim to cursor');
 
   unlockout;                           {release lock for writing to output}
   end;

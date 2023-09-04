@@ -13,6 +13,8 @@ const
   key_cursdong_k = 5;                  {set dongle record from cursor position}
   key_dongnext_k = 6;                  {drive dongle with next sequential record}
   key_runto_k = 7;                     {drive dongle from curr position to cursor}
+  key_simpos_k = 8;                    {set sim pos to curs, SHIFT to data start}
+  key_simrun_k = 9;                    {step sim to next rec, SHIFT to cursor}
 {
 ********************************************************************************
 *
@@ -45,6 +47,7 @@ begin
   rend_set.event_req_key_on^ (         {Page Down button}
     rend_get.key_sp^(rend_key_sp_pagedn_k, 0),
     key_zoomout_k);
+
   rend_set.event_req_key_on^ (         {dongle data record from cursor position}
     rend_get.key_sp^(rend_key_sp_arrow_down_k, 0),
     key_cursdong_k);
@@ -54,6 +57,13 @@ begin
   rend_set.event_req_key_on^ (         {drive dongle from curr pos to cursor}
     rend_get.key_sp^(rend_key_sp_arrow_up_k, 0),
     key_runto_k);
+
+  rend_set.event_req_key_on^ (         {set sim position}
+    rend_get.key_sp^(rend_key_sp_func_k, 1),
+    key_simpos_k);
+  rend_set.event_req_key_on^ (         {step or run sim}
+    rend_get.key_sp^(rend_key_sp_func_k, 2),
+    key_simrun_k);
   end;
 {
 ********************************************************************************
@@ -237,6 +247,53 @@ runend_stoprec_k, runend_diff_k, runend_end_k: begin {actually ran ?}
       pend_redraw := true;
       end;
     end;
+  end;
+{
+********************
+*
+*   Key: Set dongle simulation position within data.
+}
+key_simpos_k: begin
+  if csv_p = nil then goto done_event; {ignore if no data records}
+{
+*   Shift: Set to first data record.
+}
+  if rend_key_mod_shift_k in ev.key.modk then begin {SHIFT active ?}
+    sim_rec (csv_p^.rec_p);            {set sim to first data record}
+    pend_redraw := true;
+    goto done_event;
+    end;
+{
+*   Normal: Set to data record indicated by the cursor.
+}
+  sim_rec_curs;                        {set sim to data record at cursor, if any}
+  pend_redraw := true;
+  end;
+{
+********************
+*
+*   Key: Run the simulation.
+}
+key_simrun_k: begin
+  if simrec_p = nil then goto done_event; {no position set to start from ?}
+{
+*   Shift: Run to cursor.
+}
+  if rend_key_mod_shift_k in ev.key.modk then begin {SHIFT active ?}
+    rec_p := csvana_datt_rec(curs);    {get data record at cursor}
+    if rec_p = nil then goto done_event; {no fixed ending record ?}
+    case sim_run(rec_p) of             {run sim, get stop reason}
+runend_stoprec_k, runend_diff_k, runend_end_k: begin {actually ran ?}
+        pend_redraw := true;
+        end;
+      end;
+    goto done_event;
+    end;
+{
+*   Normal: Step the simulation one data record.
+}
+  sim_rec_next;                        {advance sim to next data record}
+  pend_redraw := true;
   end;
 {
 ********************

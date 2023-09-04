@@ -289,7 +289,7 @@ begin
 *   Subroutine DONG_REC_NEXT
 *
 *   Advance to the next data record and drive the pins accordingly.  Nothing is
-*   done if there is no current dongle data record, or there is not subsequent
+*   done if there is no current dongle data record, or there is no subsequent
 *   data record.
 }
 procedure dong_rec_next;               {to next data record, drive pins accordingly}
@@ -302,7 +302,7 @@ begin
 {
 ********************************************************************************
 *
-*   Subroutine DONG_RUN (STOPREC_P, RUNSTOP, DIFF, RUNEND)
+*   Subroutine DONG_RUN (STOPREC_P, RUNSTOP, DIFF)
 *
 *   Run the dongle by driving it from successive data records.
 *
