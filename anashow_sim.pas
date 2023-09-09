@@ -173,6 +173,7 @@ begin
   dongsim_sim_pins (                   {update simulation with new pins state}
     sim_p^,                            {simulation state to update}
     pins,                              {new pins state to update it with}
+    rec_p^.time,                       {data time of this new pins state}
     desc);                             {possible returned new state description}
 
   if desc.len > 0 then begin           {new state has description ?}
