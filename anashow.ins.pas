@@ -89,8 +89,6 @@ var (anashow)
   *   Dongle simulation state.
   }
   sim_p: dongsim_p_t;                  {points to DONGSIM library use state, if any}
-  sim_field:                           {data field numbers for each sim pin}
-    array[firstof(dongsim_pin_k_t)..lastof(dongsim_pin_k_t)] of sys_int_machine_t;
   simrec_p: csvana_rec_p_t;            {to curr simulated dongle state, may be NIL}
 {
 *   Globally visible subroutines and functions.
@@ -216,10 +214,10 @@ procedure sim_rec (                    {update simulation to data record}
   in      rec_p: csvana_rec_p_t);      {to data record to update simulation with}
   val_param; extern;
 
-procedure sim_rec_curs;
+procedure sim_rec_curs;                {reset sim, set to record at data cursor}
   val_param; extern;
 
-procedure sim_rec_next;
+procedure sim_rec_next;                {advance simulation to next record}
   val_param; extern;
 
 procedure sim_reset;                   {reset simulated dongle state to idle}

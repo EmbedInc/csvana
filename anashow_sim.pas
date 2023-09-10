@@ -10,10 +10,6 @@ define sim_rec_curs;
 define sim_rec_next;
 define sim_run;
 %include anashow.ins.pas;
-
-var
-  pinnames: string                     {field names expected for sim pins}
-    := 'D0 D1 D2 D3 D4 D5 D6 D7 BUSY';
 {
 ********************************************************************************
 *
@@ -41,18 +37,9 @@ procedure sim_start;                   {make sure simulation is started and read
   val_param;
 
 var
-  pnames: string_var80_t;              {list of pin names in var string}
-  p: string_index_t;                   {pin names list parse index}
-  pin: dongsim_pin_k_t;                {ID of current PIN}
-  pname: string_var32_t;               {current pin name}
-  ind: sys_int_machine_t;              {current data array 1-N index}
-  name_p: csvana_name_p_t;             {to name for current data array index}
   stat: sys_err_t;                     {completion status}
 
 begin
-  pnames.max := size_char(pnames.str); {init local var strings}
-  pname.max := size_char(pname.str);
-
   if sim_p <> nil then return;         {simulated dongle state already set up ?}
 
   if csv_p = nil then begin            {no CSV data exists ?}
@@ -65,32 +52,12 @@ begin
     sim_p,                             {returned pointer to the new sim state}
     stat);                             {completion status}
   sys_error_abort (stat, '', '', nil, 0);
-{
-*   Fill in the SIM_FIELD array.  It gives the 1-N data array index for each of
-*   our special known pins.
-}
-  string_vstring (pnames, pinnames, size_char(pinnames)); {make pin names var string}
-  p := 1;                              {init pin names parse index}
 
-  for pin := firstof(pin) to lastof(pin) do begin {loop over all special pins}
-    string_token (pnames, p, pname, stat); {get name of this pin}
-    sys_error_abort (stat, '', '', nil, 0);
-    ind := 1;                          {init current index to check name of}
-    name_p := csv_p^.name_p;           {point to name for this index}
-    while name_p <> nil do begin       {scan the list of field names}
-      if string_equal (name_p^.name, pname) then begin {found field for PIN ?}
-        sim_field[pin] := ind;         {save 1-N index for this pin}
-        exit;                          {found pin name, stop looking}
-        end;
-      name_p := name_p^.next_p;        {to next field name}
-      ind := ind + 1;                  {update data index for this new field}
-      end;                             {back to check new field for pin match}
-    if name_p = nil then begin         {didn't find name of this pin ?}
-      writeln;
-      writeln ('Data set contains no field named "', pname.str:pname.len, '".');
-      sys_bomb;
-      end;
-    end;                               {back for next special pin}
+  dongsim_csvana (                     {connect simulator to data set to simulate}
+    sim_p^,                            {simulator use state}
+    csv_p^,                            {data set to connect to}
+    stat);                             {completion status}
+  sys_error_abort (stat, '', '', nil, 0);
 
   simrec_p := nil;                     {init to not at a particular data record}
   end;
@@ -144,8 +111,6 @@ procedure sim_rec (                    {update simulation to data record}
   val_param;
 
 var
-  pins: dongsim_pins_t;                {dongle pins state}
-  pin: dongsim_pin_k_t;                {ID for current pin}
   desc: string_var80_t;                {simulated state description string}
 
 begin
@@ -163,17 +128,9 @@ begin
   tactiv := rec_p^.time;               {set data time of activity indicator}
   anashow_do_tactiv;                   {make sure activity indicator is updated}
 
-  pins := [];                          {init all pin levels to low}
-  for pin := firstof(pin) to lastof(pin) do begin {get pin states into PINS}
-    if rec_p^.data[sim_field[pin]] <> 0 then begin {this pin is set ?}
-      pins := pins + [pin];            {indicate this pin is high}
-      end;
-    end;
-
-  dongsim_sim_pins (                   {update simulation with new pins state}
-    sim_p^,                            {simulation state to update}
-    pins,                              {new pins state to update it with}
-    rec_p^.time,                       {data time of this new pins state}
+  dongsim_sim_rec (                    {update simulation with this data record}
+    sim_p^,                            {simulator state}
+    rec_p^,                            {data record to update simulator with}
     desc);                             {possible returned new state description}
 
   if desc.len > 0 then begin           {new state has description ?}
@@ -188,7 +145,7 @@ begin
 *   Set the simulated dongle state position to the data record indicated by the
 *   data cursor.  The simulated state is reset before this is done.
 }
-procedure sim_rec_curs;
+procedure sim_rec_curs;                {reset sim, set to record at data cursor}
   val_param;
 
 begin
@@ -203,7 +160,7 @@ begin
 *   Advance to the simulation to the next data record.  Nothing is done if there
 *   is no current simulation record, or there is no next record.
 }
-procedure sim_rec_next;
+procedure sim_rec_next;                {advance simulation to next record}
   val_param;
 
 begin
